@@ -26,9 +26,9 @@
 #include <fcntl.h>
 
 namespace fcitx {
-    constexpr const char*     CharsetActionPrefix     = "lotus-charset-";
-    constexpr const char*     MacroPrefix             = "macro/";
-    const std::string         CustomKeymapFile        = "conf/lotus-custom-keymap.conf";
+    constexpr const char*     CharsetActionPrefix = "lotus-charset-";
+    constexpr const char*     MacroPrefix         = "macro/";
+    const std::string         CustomKeymapFile    = "conf/lotus-custom-keymap.conf";
 
     static inline std::string macroFile(const std::string& imName) {
         return stringutils::concat("conf/lotus-macro-", imName, ".conf");
