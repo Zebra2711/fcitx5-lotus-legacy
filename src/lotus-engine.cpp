@@ -423,7 +423,30 @@ namespace fcitx {
                     selectionMade = true;
                     break;
                 }
-                default: break;
+                default: {
+                    const auto& kl = *config_.modeMenuKey;
+                    if (kl.size() == 1 && !kl[0].hasModifier()) {
+                        std::string charStr = Key::keySymToUTF8(kl[0].sym());
+                        if (!charStr.empty()) {
+                            KeySym hotkeySym = kl[0].sym();
+                            bool conflicts = hotkeySym == FcitxKey_1 || hotkeySym == FcitxKey_2 || hotkeySym == FcitxKey_3 || hotkeySym == FcitxKey_4 || hotkeySym == FcitxKey_q ||
+                                hotkeySym == FcitxKey_w || hotkeySym == FcitxKey_e || hotkeySym == FcitxKey_r || hotkeySym == FcitxKey_Escape || hotkeySym == FcitxKey_Tab ||
+                                hotkeySym == FcitxKey_Return || hotkeySym == FcitxKey_space || hotkeySym == FcitxKey_Up || hotkeySym == FcitxKey_Down ||
+                                hotkeySym == FcitxKey_ISO_Left_Tab;
+                            KeySym typeKeySym = conflicts ? FcitxKey_f : hotkeySym;
+                            if (keySym == typeKeySym) {
+                                isSelectingAppMode_ = false;
+                                ic->inputPanel().reset();
+                                ic->updateUserInterface(UserInterfaceComponent::InputPanel);
+                                auto state = ic->propertyFor(&factory_);
+                                state->reset();
+                                ic->commitString(charStr);
+                                return;
+                            }
+                        }
+                    }
+                    break;
+                }
             }
 
             if (selectedMode != LotusMode::NoMode) {
@@ -620,6 +643,24 @@ namespace fcitx {
             setMode(globalMode_, ic);
             cleanup(ic);
         }));
+
+        {
+            const auto& kl = *config_.modeMenuKey;
+            if (kl.size() == 1 && !kl[0].hasModifier()) {
+                std::string charStr = Key::keySymToUTF8(kl[0].sym());
+                if (!charStr.empty()) {
+                    KeySym hotkeySym = kl[0].sym();
+                    bool   conflicts = hotkeySym == FcitxKey_1 || hotkeySym == FcitxKey_2 || hotkeySym == FcitxKey_3 || hotkeySym == FcitxKey_4 || hotkeySym == FcitxKey_q ||
+                        hotkeySym == FcitxKey_w || hotkeySym == FcitxKey_e || hotkeySym == FcitxKey_r || hotkeySym == FcitxKey_Escape || hotkeySym == FcitxKey_Tab ||
+                        hotkeySym == FcitxKey_Return || hotkeySym == FcitxKey_space || hotkeySym == FcitxKey_Up || hotkeySym == FcitxKey_Down || hotkeySym == FcitxKey_ISO_Left_Tab;
+                    std::string typeKeyLabel = conflicts ? "F" : charStr;
+                    candidateList->append(std::make_unique<AppModeCandidateWord>(Text("[" + typeKeyLabel + "] Type '" + charStr + "'"), [cleanup, charStr](InputContext* ic) {
+                        cleanup(ic);
+                        ic->commitString(charStr);
+                    }));
+                }
+            }
+        }
 
         int selectedIndex = 1;
         switch (realMode) {
