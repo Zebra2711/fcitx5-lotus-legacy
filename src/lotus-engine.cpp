@@ -30,6 +30,34 @@ namespace fcitx {
     constexpr const char*     MacroPrefix         = "macro/";
     const std::string         CustomKeymapFile    = "conf/lotus-custom-keymap.conf";
 
+    // Returns the KeySym that triggers the "Type hotkey char" action in the mode
+    // menu.  If the hotkey itself conflicts with a reserved menu key, falls back
+    // to FcitxKey_f.
+    static bool isAppModeMenuReservedKey(KeySym sym) {
+        switch (sym) {
+            case FcitxKey_1:
+            case FcitxKey_2:
+            case FcitxKey_3:
+            case FcitxKey_4:
+            case FcitxKey_q:
+            case FcitxKey_w:
+            case FcitxKey_e:
+            case FcitxKey_r:
+            case FcitxKey_Escape:
+            case FcitxKey_Tab:
+            case FcitxKey_ISO_Left_Tab:
+            case FcitxKey_Return:
+            case FcitxKey_space:
+            case FcitxKey_Up:
+            case FcitxKey_Down: return true;
+            default: return false;
+        }
+    }
+
+    static KeySym typeKeyForModeMenuHotkey(KeySym hotkeySym) {
+        return isAppModeMenuReservedKey(hotkeySym) ? FcitxKey_f : hotkeySym;
+    }
+
     static inline std::string macroFile(const std::string& imName) {
         return stringutils::concat("conf/lotus-macro-", imName, ".conf");
     }
@@ -577,34 +605,6 @@ namespace fcitx {
             file << pair.first << "=" << static_cast<int>(pair.second) << "\n";
         }
         file.close();
-    }
-
-    // Returns the KeySym that triggers the "Type hotkey char" action in the mode
-    // menu.  If the hotkey itself conflicts with a reserved menu key, falls back
-    // to FcitxKey_f.
-    static bool isAppModeMenuReservedKey(KeySym sym) {
-        switch (sym) {
-            case FcitxKey_1:
-            case FcitxKey_2:
-            case FcitxKey_3:
-            case FcitxKey_4:
-            case FcitxKey_q:
-            case FcitxKey_w:
-            case FcitxKey_e:
-            case FcitxKey_r:
-            case FcitxKey_Escape:
-            case FcitxKey_Tab:
-            case FcitxKey_ISO_Left_Tab:
-            case FcitxKey_Return:
-            case FcitxKey_space:
-            case FcitxKey_Up:
-            case FcitxKey_Down: return true;
-            default: return false;
-        }
-    }
-
-    static KeySym typeKeyForModeMenuHotkey(KeySym hotkeySym) {
-        return isAppModeMenuReservedKey(hotkeySym) ? FcitxKey_f : hotkeySym;
     }
 
     void LotusEngine::closeAppModeMenu() {
