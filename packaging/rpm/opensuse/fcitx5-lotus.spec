@@ -3,7 +3,7 @@
 %global optflags %(echo "%{optflags}" | sed 's/-g[^ ]*//g')
 
 Name:           fcitx5-lotus
-Version:        1.3.1
+Version:        1.4.0
 Release:        1
 Summary:        Vietnamese input method for fcitx5
 License:        GPL-3.0-or-later
@@ -145,6 +145,9 @@ echo "------------------------------------------------"
 %systemd_postun_with_restart fcitx5-lotus-server@.service
 
 %changelog
-* Tue Mar 10 2026 Nguyen Hoang Ky <nhktmdzhg@gmail.com> - 1.3.1-1
-- Add logger for easy debugging
-- Simplify UI actions
+* Wed Mar 11 2026 Nguyen Hoang Ky <nhktmdzhg@gmail.com> - 1.4.0-1
+- Enhance hotkey handling and app mode selection
+- Fix some bugs
+- Use common macro table for all input method
+- Add Macro Editor Qt GUI
+- Add Import/Export tsv function for keymap and macro

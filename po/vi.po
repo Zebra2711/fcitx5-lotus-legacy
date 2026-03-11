@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: fcitx5-lotus\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-11 09:30+0700\n"
-"PO-Revision-Date: 2026-03-11 10:28+0700\n"
+"POT-Creation-Date: 2026-03-11 18:05+0700\n"
+"PO-Revision-Date: 2026-03-11 18:19+0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: vi\n"
@@ -18,7 +18,11 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Poedit 3.8\n"
 
-#: src/lotus-config.h:177 keymap-editor/editor.cpp:59
+#: src/lotus-state.cpp:236
+msgid "Page "
+msgstr "Trang "
+
+#: src/lotus-config.h:177 keymap-editor/editor.cpp:68
 msgid "Key"
 msgstr "Phím"
 
@@ -26,12 +30,12 @@ msgstr "Phím"
 msgid "Value"
 msgstr "Giá Trị"
 
-#: src/lotus-config.h:181 src/lotus-config.h:199 src/lotus-engine.cpp:151
-#: src/lotus-engine.cpp:234
+#: src/lotus-config.h:181 src/lotus-config.h:200 src/lotus-config.h:202
+#: src/lotus-engine.cpp:151 src/lotus-engine.cpp:234
 msgid "Macro"
 msgstr "Gõ Tắt"
 
-#: src/lotus-config.h:185 src/lotus-config.h:207 src/lotus-config.h:209
+#: src/lotus-config.h:185 src/lotus-config.h:211 src/lotus-config.h:213
 msgid "Custom Keymap"
 msgstr "Keymap Tuỳ Chỉnh"
 
@@ -59,38 +63,34 @@ msgstr "Bật Gõ Tắt"
 msgid "Capitalize Macro"
 msgstr "Gõ Tắt Chữ Hoa"
 
-#: src/lotus-config.h:200
+#: src/lotus-config.h:204
 msgid "Auto Restore Keys With Invalid Words"
 msgstr "Tự Động Khôi Phục Phím Với Từ Sai"
 
-#: src/lotus-config.h:201
+#: src/lotus-config.h:205
 msgid "Use oà, uý (Instead Of òa, úy)"
 msgstr "Sử Sụng oà, uý (Thay Vì òa, _úy)"
 
-#: src/lotus-config.h:202
+#: src/lotus-config.h:206
 msgid "Allow Type With More Freedom"
 msgstr "Cho Phép Gõ Dấu Tự Do"
 
-#: src/lotus-config.h:203
+#: src/lotus-config.h:207
 msgid "Allow dd To Produce đ When Auto Restore Keys With Invalid Words Is On"
 msgstr ""
 "Cho Phép Gõ dd Thành đ Khi Bật Tự động Khôi Phục Với Từ Không Phải Tiếng Việt"
 
-#: src/lotus-config.h:204
+#: src/lotus-config.h:208
 msgid "Fix Uinput Mode With Ack"
 msgstr "Sửa Lỗi Chế Độ Uinput Với Ack"
 
-#: src/lotus-config.h:205
+#: src/lotus-config.h:209
 msgid "Use Lotus Status Icons"
 msgstr "Sử Dụng Biểu Tượng Trạng Thái Lotus"
 
-#: src/lotus-config.h:212
+#: src/lotus-config.h:216
 msgid "Mode Menu Hotkey"
 msgstr "Phím Tắt Menu Chế Độ Gõ"
-
-#: src/lotus-state.cpp:236
-msgid "Page "
-msgstr "Trang "
 
 #: src/lotus-engine.cpp:123
 msgid "Charset"
@@ -108,83 +108,83 @@ msgstr "Tự động Khôi Phục Phím Với Từ Sai"
 msgid "Auto Non-VN Restore"
 msgstr "Tự động khôi phục với từ không phải tiếng Việt"
 
-#: src/lotus-engine.cpp:625
+#: src/lotus-engine.cpp:630
 msgid "App: "
 msgstr "Ứng Dụng: "
 
-#: src/lotus-engine.cpp:626
+#: src/lotus-engine.cpp:631
 msgid "[1] Uinput (Smooth)"
 msgstr "[1] Uinput (Mượt)"
 
-#: src/lotus-engine.cpp:627
+#: src/lotus-engine.cpp:632
 msgid "[2] Uinput (Slow)"
 msgstr "[2] Uinput (Chậm)"
 
-#: src/lotus-engine.cpp:628
+#: src/lotus-engine.cpp:633
 msgid "[3] Uinput (Hardcore)"
 msgstr "[3] Uinput (Hardcore)"
 
-#: src/lotus-engine.cpp:629
+#: src/lotus-engine.cpp:634
 msgid "[4] Surrounding Text"
 msgstr "[4] Văn Bản Xung Quanh"
 
-#: src/lotus-engine.cpp:630
+#: src/lotus-engine.cpp:635
 msgid "[q] Preedit"
 msgstr "[q] Gạch chân"
 
-#: src/lotus-engine.cpp:631
+#: src/lotus-engine.cpp:636
 msgid "[w] Emoji Picker"
 msgstr "[w] Chọn Emoji"
 
-#: src/lotus-engine.cpp:632
+#: src/lotus-engine.cpp:637
 msgid "[e] OFF"
 msgstr "[e] Tắt"
 
-#: src/lotus-engine.cpp:634
+#: src/lotus-engine.cpp:639
 msgid "[r] Default Typing"
 msgstr "[r] Chế Độ Gõ Mặc Định"
 
-#: src/lotus-engine.cpp:649
+#: src/lotus-engine.cpp:654
 msgid "Type"
 msgstr "Gõ"
 
-#: src/lotus-engine.cpp:704
+#: src/lotus-engine.cpp:709
 msgid "Lotus - Off"
 msgstr "Lotus - Tắt"
 
-#: keymap-editor/editor.cpp:31
+#: keymap-editor/editor.cpp:35
 msgid "Import From Existing Keymap"
 msgstr "Nhập Từ Keymap Có Sẵn"
 
-#: keymap-editor/editor.cpp:33
+#: keymap-editor/editor.cpp:37
 msgid "Original Input Method"
 msgstr "Kiểu Gõ Gốc"
 
-#: keymap-editor/editor.cpp:46
+#: keymap-editor/editor.cpp:50
 msgid "Key (Example: s)"
 msgstr "Phím (Ví Dụ: s)"
 
-#: keymap-editor/editor.cpp:53
-msgid "Add/ Update"
-msgstr "Thêm/ Cập nhật"
-
-#: keymap-editor/editor.cpp:59
+#: keymap-editor/editor.cpp:68
 msgid "Action"
 msgstr "Hành Động"
 
-#: keymap-editor/editor.cpp:66
-msgid "Remove Selection Entry"
-msgstr "Xoá Mục Đang Chọn"
+#: keymap-editor/editor.cpp:78 macro-editor/editor.cpp:63
+msgid "Import (TSV)"
+msgstr "Nhập (TSV)"
 
-#: keymap-editor/editor.cpp:75
+#: keymap-editor/editor.cpp:79 macro-editor/editor.cpp:64
+msgid "Export (TSV)"
+msgstr "Xuất (TSV)"
+
+#: keymap-editor/editor.cpp:95
 msgid "Lotus Custom Keymap"
 msgstr "Keymap Tuỳ Chỉnh Lotus"
 
-#: keymap-editor/editor.cpp:126
+#: keymap-editor/editor.cpp:146
 msgid "Confirm"
 msgstr "Xác nhận"
 
-#: keymap-editor/editor.cpp:126
+#: keymap-editor/editor.cpp:146
 msgid ""
 "This operation will delete all existing keys on the current keymap and "
 "replace them with the input method "
@@ -192,9 +192,123 @@ msgstr ""
 "Hành động này sẽ xoá tất cả phím của keymap hiện tại và thế nó với keymap "
 "của kiểu gõ "
 
-#: keymap-editor/editor.cpp:126
+#: keymap-editor/editor.cpp:146
 msgid ". Are you sure?"
 msgstr ". Bạn có chắc chắn xoá?"
+
+#: keymap-editor/editor.cpp:195
+msgid "Import Keymap"
+msgstr "Nhập Keymap"
+
+#: keymap-editor/editor.cpp:195 keymap-editor/editor.cpp:297
+#: macro-editor/editor.cpp:142 macro-editor/editor.cpp:209
+msgid "Tab-separated (*.tsv *.txt);;All files (*)"
+msgstr "Phân cách tab (*.tsv *.txt);; Tất cả tệp (*)"
+
+#: keymap-editor/editor.cpp:203 keymap-editor/editor.cpp:305
+#: macro-editor/editor.cpp:150 macro-editor/editor.cpp:217
+msgid "Error"
+msgstr "Lỗi"
+
+#: keymap-editor/editor.cpp:203 macro-editor/editor.cpp:150
+msgid "Cannot open file for reading."
+msgstr "Không thể mở tệp để đọc."
+
+#: keymap-editor/editor.cpp:237 macro-editor/editor.cpp:184
+msgid "Confirm Import"
+msgstr "Xác Nhận Nhập"
+
+#: keymap-editor/editor.cpp:238
+msgid ""
+"The current keymap list is not empty. Imported entries will be merged "
+"(existing keys will be updated). Continue?"
+msgstr ""
+"Keymap hiện tại không rỗng. Các mục nhập sẽ được gộp (mục hiện có sẽ được "
+"cập nhật). Tiếp tục?"
+
+#: keymap-editor/editor.cpp:288 macro-editor/editor.cpp:200
+msgid "Import Complete"
+msgstr "Nhập Thành Công"
+
+#: keymap-editor/editor.cpp:288 macro-editor/editor.cpp:200
+msgid "Imported %1 entries, skipped %2 invalid lines."
+msgstr "Nhập %1 mục, bỏ qua %2 dòng lỗi."
+
+#: keymap-editor/editor.cpp:293 macro-editor/editor.cpp:205
+msgid "Export"
+msgstr "Xuất"
+
+#: keymap-editor/editor.cpp:293
+msgid "The keymap list is empty, nothing to export."
+msgstr "Danh sách keymap trống, không có gì để xuất."
+
+#: keymap-editor/editor.cpp:297
+msgid "Export Keymap"
+msgstr "Xuất Keymap"
+
+#: keymap-editor/editor.cpp:305 macro-editor/editor.cpp:217
+msgid "Cannot open file for writing."
+msgstr "Không thể mở file để ghi."
+
+#: keymap-editor/editor.cpp:331 macro-editor/editor.cpp:236
+msgid "Export Complete"
+msgstr "Xuất Hoàn Tất"
+
+#: keymap-editor/editor.cpp:331 macro-editor/editor.cpp:236
+msgid ""
+"Exported %1 entries to:\n"
+"%2"
+msgstr ""
+"Đã xuất %1 mục vào:\n"
+"%2"
+
+#: macro-editor/editor.cpp:34
+msgid "Abbreviation (e.g. kg)"
+msgstr "Từ viết tắt (ví dụ: kg)"
+
+#: macro-editor/editor.cpp:35
+msgid "Full text (e.g. khô gà)"
+msgstr "Từ đầy đủ (ví dụ: khô gà)"
+
+#: macro-editor/editor.cpp:42
+msgid "Key:"
+msgstr "Khoá:"
+
+#: macro-editor/editor.cpp:44
+msgid "Value:"
+msgstr "Giá Trị:"
+
+#: macro-editor/editor.cpp:52
+msgid "Abbr."
+msgstr "Từ viết tắt."
+
+#: macro-editor/editor.cpp:52
+msgid "Text"
+msgstr "Văn bản"
+
+#: macro-editor/editor.cpp:82
+msgid "Lotus Macro"
+msgstr "Gõ Tắt Lotus"
+
+#: macro-editor/editor.cpp:142
+msgid "Import Macros"
+msgstr "Nhập bảng gõ tắt"
+
+#: macro-editor/editor.cpp:185
+msgid ""
+"The current macro list is not empty. Imported entries will be merged "
+"(existing keys will be updated). Continue?"
+msgstr ""
+"Danh sách gõ tắt hiện tại không rỗng. Các mục nhập sẽ được gộp (các mục hiện "
+"có sẽ được cập nhật). Tiếp tục?"
+
+#: macro-editor/editor.cpp:205
+msgid "The macro list is empty, nothing to export."
+msgstr "Danh sách gõ tắt đang rỗng, không có gì để xuất."
+
+#: macro-editor/editor.cpp:209
+msgid "Export Macros"
+msgstr "Xuất bảng gõ tắt"
 
 #: org.fcitx.Fcitx5.Addon.Lotus.metainfo.xml.in.in:7
 msgid "Lotus"
@@ -212,3 +326,9 @@ msgstr "Lotus là bộ gõ tiếng Việt cho Fcitx5, hỗ trợ nhiều chế �
 
 msgid "Lotus Wrapper For Fcitx"
 msgstr "Bộ Gõ Lotus Cho Fcitx"
+
+#~ msgid "Add/ Update"
+#~ msgstr "Thêm/ Cập nhật"
+
+#~ msgid "Remove Selection Entry"
+#~ msgstr "Xoá Mục Đang Chọn"
