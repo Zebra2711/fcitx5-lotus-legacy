@@ -64,7 +64,7 @@ jobs:
           buildpackage-opts: --build=binary --no-sign
 
       - name: Upload DEB artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: deb-${{ matrix.codename }}
           path: debian/artifacts/*.deb
@@ -113,7 +113,7 @@ jobs:
             find ~/rpmbuild/RPMS -name '*.rpm' -exec cp {} /work/output/ \;
 
       - name: Upload RPM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rpm-fedora-${{ matrix.releasever }}
           path: output/*.rpm
@@ -162,7 +162,7 @@ jobs:
             find ~/rpmbuild/RPMS -name '*.rpm' -exec cp {} /work/output/ \;
 
       - name: Upload RPM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rpm-opensuse-${{ matrix.releasever }}
           path: output/*.rpm
@@ -214,7 +214,7 @@ jobs:
           tar -c -I 'zstd -19 -T0' -f "fcitx5-lotus-${VERSION}-x86_64-archlinux.tar.zst" -C arch-dist .
 
       - name: Upload Arch artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: arch-tar-zst
           path: fcitx5-lotus-*-x86_64-archlinux.tar.zst
