@@ -1,41 +1,21 @@
 #!/bin/sh
 set -e
 
+# --- Màu sắc và định dạng ---
 blue='\033[1;34m'
 green='\033[1;32m'
 yellow='\033[1;33m'
 bold='\033[1;1m'
 all_off='\033[0m'
 
-ask_yn() {
-    # $1 = câu hỏi, $2 = giá trị mặc định (y/n)
-    local question="$1"
-    local default="$2"
-    local answer
-    if [ "$default" = "y" ]; then
-        printf "%b" "${bold}${question} [Y/n]: ${all_off}"
-    else
-        printf "%b" "${bold}${question} [y/N]: ${all_off}"
-    fi
-    # Nếu không phải terminal tương tác thì dùng mặc định
-    if [ ! -t 0 ]; then
-        echo "$default"
-        answer="$default"
-    else
-        read -r answer
-        answer=$(echo "$answer" | tr '[:upper:]' '[:lower:]')
-        [ -z "$answer" ] && answer="$default"
-    fi
-    case "$answer" in
-        y|yes) return 0 ;;
-        *)     return 1 ;;
-    esac
-}
+# --- Xác định user thực tế (tránh nhầm với root khi cài qua sudo) ---
+REAL_USER="${SUDO_USER:-$LOGNAME}"
+[ -z "$REAL_USER" ] && REAL_USER=$(whoami)
+USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
 
 if [ "$1" = "configure" ]; then
+    # Đảm bảo uinput hoạt động cho Lotus Server
     modprobe uinput || true
-
-    # Reload udev
     if command -v udevadm >/dev/null; then
         udevadm control --reload-rules || true
         udevadm trigger || true
@@ -44,65 +24,35 @@ if [ "$1" = "configure" ]; then
 
     echo ""
     echo -e "${blue}╔══════════════════════════════════════════╗${all_off}"
-    echo -e "${blue}║       Thiết lập sau cài đặt Lotus        ║${all_off}"
+    echo -e "${blue}║       Thiết lập tự động cho Lotus        ║${all_off}"
     echo -e "${blue}╚══════════════════════════════════════════╝${all_off}"
     echo ""
 
     # --- Bước 1: Bật Lotus Server ---
-    echo -e "${bold}[Bước 1/3] Bật Lotus Server${all_off}"
-    echo -e "  Server giúp bộ gõ giao tiếp với hệ thống để xóa và sửa ký tự chính xác."
-    echo -e "  ${yellow}(Yêu cầu quyền sudo)${all_off}"
-    echo ""
-    if ask_yn "  Bật Lotus Server cho user \"$(whoami)\" ngay bây giờ?" "y"; then
-        echo ""
-        if sudo systemctl enable --now "fcitx5-lotus-server@$(whoami).service" 2>/dev/null || \
-           (sudo systemd-sysusers && sudo systemctl enable --now "fcitx5-lotus-server@$(whoami).service" 2>/dev/null); then
-            echo -e "  ${green}✓ Lotus Server đã được bật thành công.${all_off}"
-        else
-            echo -e "  ${yellow}⚠ Không thể bật tự động. Chạy thủ công:${all_off}"
-            echo -e "    ${blue}sudo systemctl enable --now fcitx5-lotus-server@\$(whoami).service${all_off}"
-        fi
+    echo -e "${bold}[1/4] Đang bật Lotus Server cho ${REAL_USER}...${all_off}"
+    if systemctl enable --now "fcitx5-lotus-server@${REAL_USER}.service" 2>/dev/null; then
+        echo -e "  ${green}✓ Lotus Server đã được kích hoạt.${all_off}"
     else
-        echo ""
-        echo -e "  ${yellow}→ Bỏ qua. Chạy thủ công sau khi cài đặt:${all_off}"
-        echo -e "    ${blue}sudo systemctl enable --now fcitx5-lotus-server@\$(whoami).service${all_off}"
+        echo -e "  ${yellow}⚠ Cần bật thủ công: sudo systemctl enable --now fcitx5-lotus-server@${REAL_USER}.service${all_off}"
     fi
     echo ""
 
     # --- Bước 2: Thiết lập biến môi trường ---
-    echo -e "${bold}[Bước 2/3] Thiết lập biến môi trường${all_off}"
-    echo -e "  Các biến GTK_IM_MODULE, QT_IM_MODULE, XMODIFIERS... cho phép ứng dụng"
-    echo -e "  nhận diện Fcitx5 là bộ gõ mặc định. Thiếu các biến này bộ gõ sẽ không hoạt động."
-    echo ""
-    if ask_yn "  Thêm biến môi trường Fcitx5 vào \$HOME?" "y"; then
-        echo ""
-        # Phát hiện shell mặc định
-        USER_SHELL=$(getent passwd "$(whoami)" | cut -d: -f7)
-        case "$USER_SHELL" in
-            */zsh)
-                PROFILE_FILE="$HOME/.zprofile"
-                ;;
-            */fish)
-                PROFILE_FILE="$HOME/.config/fish/config.fish"
-                ;;
-            *)
-                PROFILE_FILE="$HOME/.bash_profile"
-                ;;
-        esac
+    echo -e "${bold}[2/4] Đang thiết lập biến môi trường...${all_off}"
+    USER_SHELL=$(getent passwd "$REAL_USER" | cut -d: -f7)
+    case "$USER_SHELL" in
+        */zsh)  PROFILE_FILE="$USER_HOME/.zprofile" ;;
+        */fish) PROFILE_FILE="$USER_HOME/.config/fish/config.fish" ;;
+        *)      PROFILE_FILE="$USER_HOME/.bash_profile" ;;
+    esac
 
-        IM_VARS='GTK_IM_MODULE=fcitx
-QT_IM_MODULE=fcitx
-XMODIFIERS=@im=fcitx
-SDL_IM_MODULE=fcitx
-GLFW_IM_MODULE=ibus'
-
-        # Kiểm tra xem đã có chưa để tránh thêm trùng
-        if grep -q 'GTK_IM_MODULE=fcitx' "$PROFILE_FILE" 2>/dev/null; then
-            echo -e "  ${yellow}⚠ Biến môi trường đã tồn tại trong ${PROFILE_FILE}, bỏ qua.${all_off}"
-        else
-            if [ "$USER_SHELL" = "$(command -v fish 2>/dev/null)" ] || echo "$USER_SHELL" | grep -q fish; then
-                mkdir -p "$(dirname "$PROFILE_FILE")"
-                cat >> "$PROFILE_FILE" <<'FISHEOF'
+    IM_VARS_CHECK='GTK_IM_MODULE=fcitx'
+    if [ -f "$PROFILE_FILE" ] && grep -q "$IM_VARS_CHECK" "$PROFILE_FILE"; then
+        echo -e "  ${green}✓ Biến môi trường đã tồn tại trong ${PROFILE_FILE}.${all_off}"
+    else
+        if echo "$USER_SHELL" | grep -q fish; then
+            mkdir -p "$(dirname "$PROFILE_FILE")"
+            cat >> "$PROFILE_FILE" <<'FISHEOF'
 if status is-login
     set -Ux GTK_IM_MODULE fcitx
     set -Ux QT_IM_MODULE fcitx
@@ -111,59 +61,57 @@ if status is-login
     set -gx GLFW_IM_MODULE ibus
 end
 FISHEOF
-            else
-                {
-                    echo ""
-                    echo "# Fcitx5 input method environment variables (added by fcitx5-lotus)"
-                    echo "export GTK_IM_MODULE=fcitx"
-                    echo "export QT_IM_MODULE=fcitx"
-                    echo "export XMODIFIERS=@im=fcitx"
-                    echo "export SDL_IM_MODULE=fcitx"
-                    echo "export GLFW_IM_MODULE=ibus"
-                } >> "$PROFILE_FILE"
-            fi
-            echo -e "  ${green}✓ Đã thêm vào ${PROFILE_FILE}.${all_off}"
-            echo -e "  ${yellow}→ Log out và log in lại để áp dụng.${all_off}"
-        fi
-    else
-        echo ""
-        echo -e "  ${yellow}→ Bỏ qua. Xem README để thêm thủ công.${all_off}"
-    fi
-    echo ""
-
-    # --- Bước 3: Tắt IBus ---
-    echo -e "${bold}[Bước 3/3] Tắt bộ gõ cũ (IBus)${all_off}"
-    echo -e "  IBus và Fcitx5 cùng chạy sẽ xung đột, gây gõ đôi ký tự hoặc bộ gõ không hoạt động."
-    echo -e "  Bước này sẽ dừng ibus-daemon và vô hiệu hóa IBus khỏi autostart."
-    echo ""
-    if command -v ibus-daemon >/dev/null 2>&1 || command -v ibus >/dev/null 2>&1; then
-        if ask_yn "  Tắt IBus ngay bây giờ?" "y"; then
-            echo ""
-            killall ibus-daemon 2>/dev/null || ibus exit 2>/dev/null || true
-            # Xóa autostart IBus nếu có
-            rm -f "$HOME/.config/autostart/ibus.desktop" \
-                  "$HOME/.config/autostart/ibus-daemon.desktop" 2>/dev/null || true
-            echo -e "  ${green}✓ IBus đã được tắt.${all_off}"
-            echo -e "  ${yellow}→ Hãy thêm Fcitx5 vào autostart của DE/WM để khởi động cùng hệ thống.${all_off}"
         else
-            echo ""
-            echo -e "  ${yellow}→ Bỏ qua. Nhớ tắt IBus thủ công nếu gặp xung đột.${all_off}"
+            echo -e "\n# Fcitx5 environment (added by fcitx5-lotus)\nexport GTK_IM_MODULE=fcitx\nexport QT_IM_MODULE=fcitx\nexport XMODIFIERS=@im=fcitx\nexport SDL_IM_MODULE=fcitx\nexport GLFW_IM_MODULE=ibus" >> "$PROFILE_FILE"
         fi
+        chown "$REAL_USER:$REAL_USER" "$PROFILE_FILE" || true
+        echo -e "  ${green}✓ Đã thêm cấu hình vào ${PROFILE_FILE}.${all_off}"
+    fi
+    echo ""
+
+    # --- Bước 3: Tắt bộ gõ cũ (IBus) ---
+    echo -e "${bold}[3/4] Đang dọn dẹp IBus (nếu có)...${all_off}"
+    killall ibus-daemon 2>/dev/null || true
+    rm -f "$USER_HOME/.config/autostart/ibus"* 2>/dev/null || true
+    echo -e "  ${green}✓ Đã tắt IBus để tránh xung đột.${all_off}"
+    echo ""
+
+    # --- Bước 4: Hướng dẫn Autostart ---
+    echo -e "${bold}[4/4] Hướng dẫn thêm Fcitx5 vào Autostart${all_off}"
+    
+    DE_HINT=""
+    if pgrep -x gnome-shell >/dev/null; then
+        DE_HINT="GNOME: Mở 'GNOME Tweaks' → Startup Applications → Thêm 'Fcitx 5'."
+    elif pgrep -x plasmashell >/dev/null; then
+        DE_HINT="KDE: System Settings → Autostart → Add Application → 'Fcitx 5'."
+    elif pgrep -x xfce4-session >/dev/null; then
+        DE_HINT="XFCE: Settings → Session and Startup → Application Autostart → Thêm 'Fcitx 5'."
+    elif pgrep -x Hyprland >/dev/null; then
+        DE_HINT="Hyprland: Thêm 'exec-once = fcitx5 -d' vào hyprland.conf."
+    elif pgrep -x i3 >/dev/null; then
+        DE_HINT="i3wm: Thêm 'exec --no-startup-id fcitx5 -d' vào file config."
+    elif pgrep -x sway >/dev/null; then
+        DE_HINT="Sway: Thêm 'exec fcitx5 -d' vào file config."
+    elif pgrep -x cinnamon >/dev/null; then
+        DE_HINT="Cinnamon: System Settings → Startup Applications → Thêm 'Fcitx 5'."
+    fi
+
+    if [ -n "$DE_HINT" ]; then
+        echo -e "  ${blue}💡 Phát hiện môi trường:${all_off} ${DE_HINT}"
     else
-        echo -e "  ${green}✓ Không phát hiện IBus, bỏ qua bước này.${all_off}"
+        echo -e "  ${yellow}💡 Lưu ý:${all_off} Hãy thêm 'fcitx5' vào danh sách Autostart của bạn."
     fi
     echo ""
 
     echo -e "${blue}─────────────────────────────────────────────${all_off}"
-    echo -e "${bold}Các bước tiếp theo:${all_off}"
-    echo -e "  4. Mở ${green}Fcitx5 Configuration${all_off} (fcitx5-configtool), thêm bộ gõ ${green}Lotus${all_off}."
-    echo -e "  5. ${yellow}Wayland (KDE):${all_off} Vào System Settings → Keyboard → Virtual Keyboard → chọn Fcitx 5."
-    echo -e "  6. ${yellow}Hyprland:${all_off} Thêm vào hyprland.conf:"
-    echo -e "       ${blue}permission = fcitx5-lotus-server, keyboard, allow${all_off}"
+    echo -e "${bold}Cần làm tiếp (Xem chi tiết trên GitHub README):${all_off}"
+    echo -e "  5. Cấu hình bộ gõ: Chạy ${green}fcitx5-configtool${all_off} để thêm Lotus."
+    echo -e "  6. Wayland (KDE/Hyprland): Thiết lập Virtual Keyboard & Permission."
+    echo -e "  7. Kanata: Exclude 'Lotus-Uinput-Server' trong cấu hình."
     echo -e "${blue}─────────────────────────────────────────────${all_off}"
+    echo -e "  ${yellow}→ Vui lòng Log out và Log in lại để áp dụng thay đổi.${all_off}"
     echo ""
 fi
 
 #DEBHELPER#
-
 exit 0
