@@ -382,8 +382,6 @@ namespace fcitx {
             }
         }
     }
-
-
     void LotusState::updateEmojiPreedit() {
         if (emojiBuffer_.empty()) {
             emojiCandidates_ = engine_->emojiLoader().history();
