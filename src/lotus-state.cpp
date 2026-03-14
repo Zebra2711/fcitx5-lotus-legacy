@@ -104,7 +104,7 @@ namespace fcitx {
         return connect_uinput_server() ? uinput_client_fd_ : -1;
     }
 
-    void LotusState::send_backspace_uinput(size_t count) const {
+    void LotusState::send_backspace_uinput(int count) const {
         if (uinput_client_fd_ < 0 && !connect_uinput_server()) {
             LOTUS_ERROR("Cannot send backspace since cannot connect to uinput server");
             return;
@@ -452,7 +452,7 @@ namespace fcitx {
             ic_->commitString(pending_commit_string_);
             LOTUS_INFO("Commit: " + pending_commit_string_);
             expected_backspaces_     = 0;
-            current_backspace_count_ = -1;
+            current_backspace_count_ = 0;
             pending_commit_string_   = "";
 
             event.filterAndAccept(); // Filter out the final trigger backspace.
@@ -473,7 +473,7 @@ namespace fcitx {
         // The isAutofillCertain function has been optimized to differentiate
         // between browser autofill and AI ghost text.
         int autofillOffset   = isAutofillCertain(surrounding) ? 1 : 0;
-        expected_backspaces_ = utf8::length(deletedPart) + 1 + autofillOffset;
+        expected_backspaces_ = static_cast<int>(utf8::length(deletedPart)) + 1 + autofillOffset;
         replacement_thread_id_.store(my_id, std::memory_order_release);
         replacement_start_ms_.store(now_ms(), std::memory_order_release);
         is_deleting_.store(true, std::memory_order_release);
@@ -851,7 +851,7 @@ namespace fcitx {
         }
         if (current_backspace_count_ >= expected_backspaces_ && is_deleting_.load()) {
             is_deleting_.store(false);
-            current_backspace_count_ = -1;
+            current_backspace_count_ = 0;
             expected_backspaces_     = 0;
         }
         if (needEngineReset.load() && realMode != LotusMode::Off) {
@@ -860,7 +860,7 @@ namespace fcitx {
             history_.clear();
             ResetEngine(lotusEngine_.handle());
             is_deleting_.store(false);
-            current_backspace_count_ = -1;
+            current_backspace_count_ = 0;
             needEngineReset.store(false);
         }
 

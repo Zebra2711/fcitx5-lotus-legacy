@@ -93,8 +93,8 @@ namespace fcitx {
         CGoObject               lotusEngine_;
         std::string             oldPreBuffer_;
         std::string             history_;
-        size_t                  expected_backspaces_     = 0;
-        size_t                  current_backspace_count_ = 0;
+        int                     expected_backspaces_     = 0;
+        int                     current_backspace_count_ = 0;
         std::string             pending_commit_string_;
         std::atomic<int>        current_thread_id_{0};
         std::string             emojiBuffer_;
@@ -118,7 +118,7 @@ namespace fcitx {
          * @brief Sends backspace key events via uinput.
          * @param count Number of backspaces to send.
          */
-        void send_backspace_uinput(size_t count) const;
+        void send_backspace_uinput(int count) const;
 
         /**
          * @brief Replays buffer content to the engine.
