@@ -194,19 +194,19 @@ namespace fcitx {
         Option<std::string, InputMethodConstrain, DefaultMarshaller<std::string>, InputMethodAnnotation> inputMethod{
             this, "InputMethod", _("Input Method"), "Telex", InputMethodConstrain(&inputMethod), {}, InputMethodAnnotation()};
         OptionWithAnnotation<std::string, StringListAnnotation> outputCharset{this, "OutputCharset", _("Output Charset"), "Unicode", {}, {}, StringListAnnotation()};
-        Option<bool> spellCheck{this, "SpellCheck", _("Enable Spell Check"), true}; Option<bool> macro{this, "Macro", _("Enable Macro"), true};
+        Option<bool> spellCheck{this, "SpellCheck", _("Enable Spell Check"), true}; Option<bool> enableMacro{this, "EnableMacro", _("Enable Macro"), true};
         Option<bool>                                                                             capitalizeMacro{this, "CapitalizeMacro", _("Capitalize Macro"), true};
-#ifdef ENABLE_MACRO_EDITOR
-        ExternalOption macroConfig{this, "MacroConfig", _("Macro"), "fcitx://config/addon/lotus/macro"};
-#else
-        SubConfigOption macroConfig{this, "MacroConfig", _("Macro"), "fcitx://config/addon/lotus/macro"};
-#endif
         Option<bool> autoNonVnRestore{this, "AutoNonVnRestore", _("Auto Restore Keys With Invalid Words"), true};
         Option<bool> modernStyle{this, "ModernStyle", _("Use oà, uý (Instead Of òa, úy)"), true};
         Option<bool> freeMarking{this, "FreeMarking", _("Allow Type With More Freedom"), true};
         Option<bool> ddFreeStyle{this, "DdFreeStyle", _("Allow dd To Produce đ When Auto Restore Keys With Invalid Words Is On"), true};
         Option<bool> fixUinputWithAck{this, "FixUinputWithAck", _("Fix Uinput Mode With Ack"), false};
         Option<bool> useLotusIcons{this, "UseLotusIcons", _("Use Lotus Status Icons"), false};
+#ifdef ENABLE_MACRO_EDITOR
+        ExternalOption macroEditor{this, "MacroEditor", _("Macro"), "fcitx://config/addon/lotus/lotus-macro"};
+#else
+        SubConfigOption macroEditor{this, "MacroEditor", _("Macro"), "fcitx://config/addon/lotus/lotus-macro"};
+#endif
 #ifdef ENABLE_KEYMAP_EDITOR
         ExternalOption customKeymapUI{this, "CustomKeymapUI", _("Custom Keymap"), "fcitx://config/addon/lotus/custom_keymap"};
 #else

@@ -76,6 +76,16 @@ namespace fcitx::lotus {
         void onExportClicked();
 
         /**
+         * @brief Moves the currently selected row up.
+         */
+        void onMoveUpClicked();
+
+        /**
+         * @brief Moves the currently selected row down.
+         */
+        void onMoveDownClicked();
+
+        /**
          * @brief Populates the input fields when a row is selected.
          */
         void onRowSelected(int row, int column);
@@ -86,13 +96,19 @@ namespace fcitx::lotus {
          * @param key Abbreviation (trigger key sequence).
          * @param value Expanded output text.
          */
-        void          upsertRow(const QString& key, const QString& value);
+        void upsertRow(const QString& key, const QString& value);
+        /**
+         * @brief Updates the enabled state of Move Up/Down buttons based on current selection.
+         */
+        void          updateButtonStates();
 
         QTableWidget* tableWidget_;
         QLineEdit*    inputKey_;
         QLineEdit*    inputValue_;
         QPushButton*  btnAdd_;
         QPushButton*  btnRemove_;
+        QPushButton*  btnMoveUp_;
+        QPushButton*  btnMoveDown_;
         QPushButton*  btnImport_;
         QPushButton*  btnExport_;
     };
