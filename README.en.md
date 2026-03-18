@@ -497,11 +497,19 @@ Right-click the Lotus icon on the system tray to quickly toggle settings:
 | **Capitalize Macro**    | Enable/disable uppercase shorthand typing.            | On      |
 | **Auto non-VN restore** | Enable/disable auto-restore for non-Vietnamese words. | On      |
 
+<details>
+
+<summary><b>About GNOME systray icon issue</b></summary>
+
+If you are using GNOME, please use the `AppIndicator and KStatusNotifieritem Support` extension to display the correct Lotus icon on the systray, avoid using Kimpanel.
+
 </details>
 
 **Option 2: Lotus - Fcitx Configuration Menu (Advanced Settings)**
 
 Right-click the Lotus or Fcitx icon -> **Input Method Settings** -> Select **Lotus** -> Click the **Configure** (gear icon) in the middle.
+
+Or if your distro is recent enough to support PySide6, you can go to the Lotus or Fcitx icon -> **Settings** to open the Lotus configuration application.
 
 Advanced options available here:
 
@@ -509,15 +517,15 @@ Advanced options available here:
 - **Custom Keymap:** Click the gear icon on the _Custom Keymap_ row to customize your keymap. Select **Custom** input method to apply.
 - **Menu Hotkey:** Change the key to open the mode menu (default is `` ` ``) at _Mode menu hotkey_.
 
-| Option                                                                    | Description                                                                    | Default         |
-| :------------------------------------------------------------------------ | :----------------------------------------------------------------------------- | :-------------- |
-| **Mode**                                                                  | Select typing mode.                                                            | Uinput (Smooth) |
-| **Input Method**                                                          | Select input method.                                                           | Telex           |
-| **Use oà, uý (Instead Of òa, úy)**                                        | Enable/disable modern tone mark placement style.                               | On              |
-| **Allow Type With More Freedom**                                          | Enable/disable free tone marking.                                              | On              |
-| **Allow dd To Produce đ When Auto Restore Keys With Invalid Words Is On** | Enable/disable allowing "dd" to produce "đ" when _Auto non-VN restore_ is On   | On              |
-| **Fix Uinput Mode With Ack**                                              | Recommended when using Chromium-based applications (Chrome, Brave, Edge, ...). | Off             |
-| **Use Lotus Status Icons**                                                | Enable/disable using Lotus icons instead of the default V/E icons.             | Off             |
+| Option                                                                    | Description                                                                                      | Default         |
+| :------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------- | :-------------- |
+| **Mode**                                                                  | Select typing mode.                                                                              | Uinput (Smooth) |
+| **Input Method**                                                          | Select input method.<br/>**Note:** If you want to type w -> ư, you can select Telex W or Telex 2 | Telex           |
+| **Use oà, uý (Instead Of òa, úy)**                                        | Enable/disable modern tone mark placement style.                                                 | On              |
+| **Allow Type With More Freedom**                                          | Enable/disable free tone marking.                                                                | On              |
+| **Allow dd To Produce đ When Auto Restore Keys With Invalid Words Is On** | Enable/disable allowing "dd" to produce "đ" when _Auto non-VN restore_ is On                     | On              |
+| **Fix Uinput Mode With Ack**                                              | Recommended when using Chromium-based applications (Chrome, Brave, Edge, ...).                   | Off             |
+| **Use Lotus Status Icons**                                                | Enable/disable using Lotus icons instead of the default V/E icons.                               | Off             |
 
 ### 2. Typing mode menu
 

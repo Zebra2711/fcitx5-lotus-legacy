@@ -496,9 +496,19 @@ Nhấp chuột phải vào biểu tượng Lotus trên system tray để mở nh
 | **Capitalize Macro**    | Bật/tắt gõ tắt chữ hoa.                                 | Bật      |
 | **Auto non-VN restore** | Bật/tắt tự động khôi phục với từ không phải tiếng Việt. | Bật      |
 
+<details>
+
+<summary><b>Về vấn đề hiển thị icon trên systray của GNOME</b></summary>
+
+Nếu bạn sử dụng GNOME, hãy ưu tiên sử dụng extension `AppIndicator and KStatusNotifieritem Support` để hiển thị đúng biểu tượng Lotus trên systray, tránh sử dụng Kimpanel
+
+</details>
+
 **Cách 2: Menu cấu hình Lotus - Fcitx (Advanced Settings)**
 
 Nhấp chuột phải vào biểu tượng Lotus hoặc icon Fcitx -> **Input Method Settings** (Cấu hình bộ gõ) -> Chọn **Lotus** -> Nhấn biểu tượng **Configure** (bánh răng) ở giữa.
+
+Hoặc nếu distro của bạn đủ mới để hỗ trợ PySide6, bạn có thể vào biểu tượng Lotus hoặc icon Fcitx -> **Settings** để mở ứng dụng cấu hình riêng của Lotus.
 
 Tại đây bạn có thể tùy chỉnh chi tiết:
 
@@ -506,15 +516,15 @@ Tại đây bạn có thể tùy chỉnh chi tiết:
 - **Keymap tùy chỉnh:** Nhấn bánh răng dòng _Custom Keymap_ để tự định nghĩa phím. Chọn kiểu gõ **Custom** để áp dụng.
 - **Phím tắt Menu:** Đổi phím nóng mở menu chế độ gõ (mặc định là `` ` ``) tại dòng _Mode menu hotkey_.
 
-| Tùy chọn                                                                  | Mô tả                                                         | Mặc định        |
-| :------------------------------------------------------------------------ | :------------------------------------------------------------ | :-------------- |
-| **Mode**                                                                  | Chọn chế độ gõ.                                               | Uinput (Smooth) |
-| **Input Method**                                                          | Chọn kiểu gõ.                                                 | Telex           |
-| **Use oà, uý (Instead Of òa, úy)**                                        | Bật/tắt kiểu đặt dấu thanh hiện đại.                          | Bật             |
-| **Allow Type With More Freedom**                                          | Bật/tắt bỏ dấu tự do.                                         | Bật             |
-| **Allow dd To Produce đ When Auto Restore Keys With Invalid Words Is On** | Bật/tắt cho phép "dd" tạo "đ" khi dùng _Auto non-VN restore_. | Bật             |
-| **Fix Uinput Mode With Ack**                                              | Khuyên dùng cho ứng dụng Chromium (Chrome, Brave, Edge, ...). | Tắt             |
-| **Use Lotus Status Icons**                                                | Dùng icon Lotus thay vì icon V/E mặc định.                    | Tắt             |
+| Tùy chọn                                                                  | Mô tả                                                                                                            | Mặc định        |
+| :------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------- | :-------------- |
+| **Mode**                                                                  | Chọn chế độ gõ.                                                                                                  | Uinput (Smooth) |
+| **Input Method**                                                          | Chọn kiểu gõ.<br/>**Lưu ý**: Nếu bạn muốn sử dụng kiểu gõ Telex gõ w -> ư, hãy chọn kiểu gõ Telex W hoặc Telex 2 | Telex           |
+| **Use oà, uý (Instead Of òa, úy)**                                        | Bật/tắt kiểu đặt dấu thanh hiện đại.                                                                             | Bật             |
+| **Allow Type With More Freedom**                                          | Bật/tắt bỏ dấu tự do.                                                                                            | Bật             |
+| **Allow dd To Produce đ When Auto Restore Keys With Invalid Words Is On** | Bật/tắt cho phép "dd" tạo "đ" khi dùng _Auto non-VN restore_.                                                    | Bật             |
+| **Fix Uinput Mode With Ack**                                              | Khuyên dùng cho ứng dụng Chromium (Chrome, Brave, Edge, ...).                                                    | Tắt             |
+| **Use Lotus Status Icons**                                                | Dùng icon Lotus thay vì icon V/E mặc định.                                                                       | Tắt             |
 
 ### 2. Menu chuyển chế độ gõ
 
