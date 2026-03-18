@@ -13,7 +13,9 @@
 #include "lotus-monitor.h"
 #include "lotus-utils.h"
 #include "ack-apps.h"
+#ifndef DISABLE_VERSION_ACTION
 #include "lotus-version.h"
+#endif
 
 #include <fcitx-config/iniparser.h>
 #include <fcitx/menu.h>
@@ -114,11 +116,13 @@ namespace fcitx {
 
         auto& uiManager = instance_->userInterfaceManager();
 
+#ifndef DISABLE_VERSION_ACTION
         versionAction_ = std::make_unique<SimpleAction>();
         versionAction_->setShortText("Lotus " LOTUS_VERSION_STRING);
         versionAction_->setLongText("Lotus Input Method v" LOTUS_VERSION_STRING);
         versionAction_->setIcon("help-about");
         uiManager.registerAction("lotus-version", versionAction_.get());
+#endif
 
         charsetAction_ = std::make_unique<SimpleAction>();
         charsetAction_->setShortText(_("Charset"));
@@ -155,6 +159,17 @@ namespace fcitx {
         initToggleAction(autoNonVnRestoreAction_, config_.autoNonVnRestore, "lotus-autonvnrestore", "edit-undo", _("Auto Restore Keys With Invalid Wwords"),
                          _("Auto Non-VN Restore"), uiManager);
 
+        settingsAction_ = std::make_unique<SimpleAction>();
+        settingsAction_->setShortText(_("Settings"));
+        settingsAction_->setIcon("configure");
+        connections_.emplace_back(settingsAction_->connect<SimpleAction::Activated>([](InputContext*) {
+            if (fork() == 0) {
+                execlp("fcitx5-lotus-settings", "fcitx5-lotus-settings", nullptr);
+                _exit(1);
+            }
+        }));
+        uiManager.registerAction("lotus-settings", settingsAction_.get());
+
         reloadConfig();
         globalMode_ = modeStringToEnum(config_.mode.value());
         instance_->inputContextManager().registerProperty("LotusState", &factory_);
@@ -170,7 +185,11 @@ namespace fcitx {
         }
         appRulesPath_ = configDir + "/lotus-app-rules.conf";
         loadAppRules();
-        toggleActions_ = {versionAction_.get(), charsetAction_.get(), spellCheckAction_.get(), macroAction_.get(), capitalizeMacroAction_.get(), autoNonVnRestoreAction_.get()};
+        toggleActions_ = {
+#ifndef DISABLE_VERSION_ACTION
+            versionAction_.get(),
+#endif
+            charsetAction_.get(), spellCheckAction_.get(), macroAction_.get(), capitalizeMacroAction_.get(), autoNonVnRestoreAction_.get(), settingsAction_.get()};
     }
 
     void LotusEngine::initToggleAction(std::unique_ptr<SimpleAction>& action, Option<bool>& option, const std::string& actionId, const std::string& iconName,
@@ -238,23 +257,15 @@ namespace fcitx {
     }
 
     void LotusEngine::setSubConfig(const std::string& path, const RawConfig& config) {
-        if (path == "custom_keymap") { // NOLINT
-#ifdef ENABLE_KEYMAP_EDITOR
-            FCITX_UNUSED(config);
-#else
+        if (path == "custom_keymap") {
             customKeymap_.load(config, true);
             safeSaveAsIni(customKeymap_, CustomKeymapFile);
             refreshEngine();
-#endif
         } else if (path == "lotus-macro") {
-#ifdef ENABLE_MACRO_EDITOR
-            FCITX_UNUSED(config);
-#else
             macroTables_.load(config, true);
             safeSaveAsIni(macroTables_, MacroTableFile);
             macroTableObject_.reset(newMacroTable(macroTables_));
             refreshEngine();
-#endif
         }
     }
 

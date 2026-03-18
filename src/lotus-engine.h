@@ -190,17 +190,19 @@ namespace fcitx {
         }
 
       private:
-        Instance*                                  instance_;
-        lotusConfig                                config_;
-        lotusCustomKeymap                          customKeymap_;
+        Instance*                instance_;
+        lotusConfig              config_;
+        lotusCustomKeymap        customKeymap_;
 
-        lotusMacroTable                            macroTables_;
-        CGoObject                                  macroTableObject_;
+        lotusMacroTable          macroTables_;
+        CGoObject                macroTableObject_;
 
-        FactoryFor<LotusState>                     factory_;
-        std::vector<std::string>                   imNames_;
+        FactoryFor<LotusState>   factory_;
+        std::vector<std::string> imNames_;
 
-        std::unique_ptr<SimpleAction>              versionAction_;
+#ifndef DISABLE_VERSION_ACTION
+        std::unique_ptr<SimpleAction> versionAction_;
+#endif
         std::unique_ptr<SimpleAction>              charsetAction_;
         std::vector<std::unique_ptr<SimpleAction>> charsetSubAction_;
         std::unique_ptr<Menu>                      charsetMenu_;
@@ -209,6 +211,7 @@ namespace fcitx {
         std::unique_ptr<SimpleAction>              macroAction_;
         std::unique_ptr<SimpleAction>              capitalizeMacroAction_;
         std::unique_ptr<SimpleAction>              autoNonVnRestoreAction_;
+        std::unique_ptr<SimpleAction>              settingsAction_;
         std::vector<SimpleAction*>                 toggleActions_;
         std::vector<ScopedConnection>              connections_;
         CGoObject                                  dictionary_;

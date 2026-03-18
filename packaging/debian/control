@@ -15,11 +15,10 @@ Build-Depends: debhelper (>= 13),
                libudev-dev,
                pkg-config,
                libx11-dev,
-               libfcitx5-qt6-dev <!noqut>,
-               qt6-base-dev
+               python3 <!noqut>
 Standards-Version: 4.6.0
 
 Package: fcitx5-lotus
 Architecture: any
-Depends: fcitx5, fcitx5-data, udev, hicolor-icon-theme, ${misc:Depends}, ${shlibs:Depends}
+Depends: fcitx5, fcitx5-data, udev, hicolor-icon-theme, python3-pyside6.qtwidgets <!noqut>, python3-dbus <!noqut>, ${misc:Depends}, ${shlibs:Depends}
 Description: Vietnamese input method for fcitx5

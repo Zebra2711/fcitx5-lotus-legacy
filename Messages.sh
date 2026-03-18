@@ -14,6 +14,21 @@ xgettext \
 -o /tmp/lotus-xml.pot \
 org.fcitx.Fcitx5.Addon.Lotus.metainfo.xml.in.in
 
+xgettext \
+--language=Python \
+--from-code=UTF-8 \
+--keyword=_ \
+-o /tmp/lotus-python.pot \
+$(find . -name "*.py")
+
+xgettext \
+--language=Desktop \
+--from-code=UTF-8 \
+--keyword=Name \
+--keyword=Comment \
+-o /tmp/lotus-desktop.pot \
+settings-gui/org.fcitx.Fcitx5.Addon.Lotus.Settings.desktop.in
+
 {
     echo 'msgid ""'
     echo 'msgstr ""'
@@ -30,4 +45,6 @@ msgcat \
 /tmp/lotus-cpp.pot \
 /tmp/lotus-xml.pot \
 /tmp/lotus-conf.pot \
+/tmp/lotus-python.pot \
+/tmp/lotus-desktop.pot \
 -o po/fcitx5-lotus.pot
