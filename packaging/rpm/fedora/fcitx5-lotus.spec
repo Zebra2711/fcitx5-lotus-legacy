@@ -2,7 +2,7 @@
 %global optflags %(echo "%{optflags}" | sed 's/-g[^ ]*//g')
 
 Name:           fcitx5-lotus
-Version:        1.5.0
+Version:        1.5.1
 Release:        1
 Summary:        Vietnamese input method for fcitx5
 License:        GPL-3.0-or-later
@@ -152,6 +152,5 @@ fi
 %systemd_postun_with_restart fcitx5-lotus-server@.service
 
 %changelog
-* Wed Mar 18 2026 Nguyen Hoang Ky <nhktmdzhg@gmail.com> - 1.5.0-1
-- Add new PySide6 GUI for Fcitx5 Lotus
-- Add double space to period setting (experimental)
+* Wed Mar 18 2026 Nguyen Hoang Ky <nhktmdzhg@gmail.com> - 1.5.1-1
+- Fix bug import/export Qt GUI

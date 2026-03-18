@@ -257,7 +257,7 @@ class MacroEditorPage(BaseEditorPage):
         self.update_button_states()
 
     def on_import(self):
-        path, _ = QFileDialog.getOpenFileName(
+        path, _filter = QFileDialog.getOpenFileName(
             self,
             _("Import Macros"),
             "",
@@ -317,7 +317,7 @@ class MacroEditorPage(BaseEditorPage):
                 self, _("Export"), _("The macro list is empty, nothing to export.")
             )
             return
-        path, _ = QFileDialog.getSaveFileName(
+        path, _filter = QFileDialog.getSaveFileName(
             self,
             _("Export Macros"),
             "lotus-macro.tsv",

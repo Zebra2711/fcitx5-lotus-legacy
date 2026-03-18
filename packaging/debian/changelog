@@ -1,6 +1,5 @@
-fcitx5-lotus (1.5.0-1) unstable; urgency=medium
+fcitx5-lotus (1.5.1-1) unstable; urgency=medium
 
-  * Add new PySide6 GUI for Fcitx5 Lotus
-  * Add double space to period setting (experimental)
+  * Fix bug import/export Qt GUI
 
- -- Nguyen Hoang Ky <nhktmdzhg@gmail.com>  Wed, 18 Mar 2026 19:22:00 +0700
+ -- Nguyen Hoang Ky <nhktmdzhg@gmail.com>  Wed, 18 Mar 2026 23:59:00 +0700

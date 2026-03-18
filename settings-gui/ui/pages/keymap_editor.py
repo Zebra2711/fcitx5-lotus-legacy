@@ -417,7 +417,7 @@ class KeymapEditorPage(BaseEditorPage):
 
     def on_import(self):
         """Imports keymap from a TSV file."""
-        path, _ = QFileDialog.getOpenFileName(
+        path, _filter = QFileDialog.getOpenFileName(
             self,
             _("Import Keymap"),
             "",
@@ -492,7 +492,7 @@ class KeymapEditorPage(BaseEditorPage):
             )
             return
 
-        path, _ = QFileDialog.getSaveFileName(
+        path, _filter = QFileDialog.getSaveFileName(
             self,
             _("Export Keymap"),
             "lotus-keymap.tsv",
