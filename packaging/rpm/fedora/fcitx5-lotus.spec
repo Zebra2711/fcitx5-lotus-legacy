@@ -15,19 +15,20 @@ BuildRequires:  gcc-c++
 BuildRequires:  gettext-devel
 BuildRequires:  glibc-devel
 BuildRequires:  cmake(Fcitx5Core)
-BuildRequires:  cmake(Fcitx5Qt6WidgetsAddons)
-BuildRequires:  cmake(qt6)
 BuildRequires:  libinput-devel
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  pkgconfig(libudev)
 BuildRequires:  libX11-devel
 
 BuildRequires:  golang
+BuildRequires:  python3
 BuildRequires:  libgudev-devel
 
 %{?systemd_requires}
 Requires:       fcitx5-data
 Requires:       fcitx5
+Requires:       python3-pyside6
+Requires:       python3-dbus
 Requires:       hicolor-icon-theme
 
 %description
@@ -50,11 +51,10 @@ Vietnamese input method for fcitx5
 %license %{_datadir}/licenses/%{name}/GPL-3.0-or-later.txt
 %license %{_datadir}/licenses/%{name}/LGPL-2.1-or-later.txt
 %{_bindir}/fcitx5-lotus-server
+%{_bindir}/fcitx5-lotus-settings
 
 %dir %{_libdir}/fcitx5
 %{_libdir}/fcitx5/liblotus.so
-%{_libdir}/fcitx5/qt6/libfcitx5-lotus-keymap-editor.so
-%{_libdir}/fcitx5/qt6/libfcitx5-lotus-macro-editor.so
 
 %{_prefix}/lib/modules-load.d/fcitx5-lotus.conf
 %{_unitdir}/fcitx5-lotus-server@.service
@@ -66,6 +66,9 @@ Vietnamese input method for fcitx5
 
 %dir %{_datadir}/fcitx5/lotus
 %{_datadir}/fcitx5/lotus/vietnamese.cm.dict
+
+%{_datadir}/fcitx5-lotus/settings-gui/
+%{_datadir}/applications/org.fcitx.Fcitx5.Addon.Lotus.Settings.desktop
 
 %{_datadir}/icons/hicolor/scalable/apps/fcitx-lotus.svg
 %{_datadir}/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx-lotus.svg

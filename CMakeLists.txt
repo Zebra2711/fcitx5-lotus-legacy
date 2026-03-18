@@ -18,7 +18,7 @@ include(FeatureSummary)
 include(GNUInstallDirs)
 include(ECMUninstallTarget)
 
-option(ENABLE_QT "Enable Qt based keymap editor" On)
+option(ENABLE_QT "Enable Qt based GUI" On)
 
 find_package(Fcitx5Core ${REQUIRED_FCITX_VERSION} REQUIRED)
 find_package(Fcitx5ModuleEmoji REQUIRED)
@@ -46,14 +46,7 @@ add_subdirectory(server)
 add_subdirectory(misc)
 
 if(ENABLE_QT)
-    target_compile_definitions(lotus PRIVATE ENABLE_KEYMAP_EDITOR)
-    target_compile_definitions(lotus PRIVATE ENABLE_MACRO_EDITOR)
-    set(QT_MAJOR_VERSION 6)
-    find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
-    find_package(Fcitx5Qt${QT_MAJOR_VERSION}WidgetsAddons 5.0.10 REQUIRED)
-    include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src")
-    add_subdirectory(keymap-editor)
-    add_subdirectory(macro-editor)
+    add_subdirectory(settings-gui)
 endif(ENABLE_QT)
 
 configure_file(

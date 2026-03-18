@@ -186,7 +186,7 @@ jobs:
             set -euo pipefail
             pacman -Syu --noconfirm \
               cmake extra-cmake-modules gcc go \
-              fcitx5-qt libinput libx11 systemd \
+              fcitx5 libinput libx11 systemd python \
               make pkgconf zstd
 
             cd /work

@@ -50,7 +50,6 @@ jobs:
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config --global --add safe.directory "$GITHUB_WORKSPACE/fcitx5-lotus"
           git config --global --add safe.directory "$GITHUB_WORKSPACE/fcitx5"
-          git config --global --add safe.directory "$GITHUB_WORKSPACE/fcitx5-qt"
       - uses: actions/checkout@v6
         with:
           repository: fcitx/fcitx5
@@ -69,17 +68,6 @@ jobs:
           cmake-option: >-
             -DENABLE_KEYBOARD=Off -DENABLE_X11=Off -DENABLE_WAYLAND=Off -DENABLE_ENCHANT=Off
             -DENABLE_DBUS=Off -DENABLE_SERVER=Off -DUSE_SYSTEMD=Off -DENABLE_EMOJI=On
-      - uses: actions/checkout@v6
-        with:
-          repository: fcitx/fcitx5-qt
-          path: fcitx5-qt
-
-      - name: Build and Install fcitx5-qt
-        uses: fcitx/github-actions@cmake
-        with:
-          path: fcitx5-qt
-          cmake-option: >-
-            -DENABLE_QT4=Off -DENABLE_QT5=Off -DENABLE_QT6=On
       - uses: actions/checkout@v6
         with:
           path: fcitx5-lotus
