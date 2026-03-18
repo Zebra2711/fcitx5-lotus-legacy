@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QSpacerItem,
     QSizePolicy,
 )
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QPalette
 from PySide6.QtCore import Qt, QSize, QFile
 from i18n import _
 from core.dbus_handler import LotusDBusHandler
@@ -267,20 +267,6 @@ class LotusSettingsWindow(QMainWindow):
         self.setMinimumSize(750, 500)
         self.resize(w, h)
         self.move((screen.width() - w) // 2, (screen.height() - h) // 2)
-
-    def _add_header(self, title: str):
-        item = QListWidgetItem(title)
-        item.setData(Qt.UserRole, "header")
-        item.setFlags(item.flags() & ~Qt.ItemIsSelectable)
-
-        # Set styling directly since QListWidgetItem is not a QObject
-        font = item.font()
-        font.setBold(True)
-        font.setPointSize(10)
-        item.setFont(font)
-        item.setForeground(Qt.gray)
-
-        self.sidebar.addItem(item)
 
     def _add_page(self, title: str, icon_name: str, widget: QWidget):
         item = QListWidgetItem(QIcon.fromTheme(icon_name), title)

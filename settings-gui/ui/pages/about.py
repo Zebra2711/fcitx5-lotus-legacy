@@ -84,7 +84,7 @@ class AboutPage(QWidget):
         layout.addWidget(desc, alignment=Qt.AlignCenter)
 
         # GitHub Project Link
-        github_link = QLabel('<a href="https://github.com/LotusInputMethod/fcitx5-lotus" style="color: #35a2e1; text-decoration: none;">github.com/LotusInputMethod/fcitx5-lotus</a>')
+        github_link = QLabel('<a href="https://github.com/LotusInputMethod/fcitx5-lotus" style="text-decoration: none;">https://github.com/LotusInputMethod/fcitx5-lotus</a>')
         github_link.setOpenExternalLinks(True)
         layout.addWidget(github_link, alignment=Qt.AlignCenter)
 
@@ -137,7 +137,7 @@ class AboutPage(QWidget):
         ]
         
         for name, profile_url in authors_data:
-            author_link = QLabel(f'<a href="{profile_url}" style="color: #ffffff; text-decoration: none;">{name}</a>')
+            author_link = QLabel(f'<a href="{profile_url}" style="text-decoration: none;">{name}</a>')
             author_link.setOpenExternalLinks(True)
             author_link.setCursor(Qt.PointingHandCursor)
             author_link.setObjectName("AuthorLink")
