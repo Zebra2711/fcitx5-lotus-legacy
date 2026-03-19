@@ -23,7 +23,6 @@ from PySide6.QtGui import QIcon, QPalette
 from PySide6.QtCore import Qt, QSize, QFile
 from i18n import _
 from core.dbus_handler import LotusDBusHandler
-from core.file_handler import Fcitx5ConfigHandler
 
 from ui.pages.dynamic_settings import DynamicSettingsPage, SettingsCategory
 from ui.pages.macro_editor import MacroEditorPage
@@ -40,7 +39,6 @@ class LotusSettingsWindow(QMainWindow):
         self.setWindowTitle(_("Lotus Settings"))
 
         self.dbus_handler = LotusDBusHandler()
-        self.file_handler = Fcitx5ConfigHandler()
 
         self._setup_ui()
         self._setup_window_size()
@@ -166,12 +164,12 @@ class LotusSettingsWindow(QMainWindow):
         self._add_page(
             _("Macros"),
             "accessories-text-editor",
-            MacroEditorPage(self.file_handler, self.dbus_handler),
+            MacroEditorPage(self.dbus_handler),
         )
         self._add_page(
             _("Keymap"),
             "preferences-desktop-keyboard",
-            KeymapEditorPage(self.file_handler),
+            KeymapEditorPage(self.dbus_handler),
         )
         self._add_page(
             _("Appearance"),

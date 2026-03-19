@@ -26,7 +26,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
 from i18n import _
-from core.file_handler import Fcitx5ConfigHandler
+from core.dbus_handler import LotusDBusHandler
 from ui.pages.base_editor import BaseEditorPage
 from ui.pages.dynamic_settings import CardWidget
 
@@ -226,9 +226,9 @@ PRESETS = {
 class KeymapEditorPage(BaseEditorPage):
     """UI for editing Lotus custom keymap."""
 
-    def __init__(self, config_handler: Fcitx5ConfigHandler, parent=None):
+    def __init__(self, dbus_handler: LotusDBusHandler, parent=None):
         super().__init__(parent)
-        self.handler = config_handler
+        self.dbus = dbus_handler
         self._setup_ui()
         self.load_data()
 
@@ -320,11 +320,11 @@ class KeymapEditorPage(BaseEditorPage):
         editor_layout.addLayout(toolbar_layout)
 
     def load_data(self):
-        """Loads data from the INI file."""
+        """Loads keymap data strictly via D-Bus."""
         self.blockSignals(True)
         try:
             self.table.setRowCount(0)
-            data = self.handler.read_array_config(self.handler.keymap_file, "CustomKeymap")
+            data = self.dbus.get_sub_config_list("custom_keymap", "CustomKeymap")
             for item in data:
                 self._add_row(item.get("Key", ""), item.get("Value", ""))
         finally:
@@ -340,16 +340,16 @@ class KeymapEditorPage(BaseEditorPage):
         return self.table.rowCount() > 0
 
     def save_data(self, quiet=False):
-        """Saves current table to the INI file."""
+        """Saves current table via DBus to C++ Engine."""
         data = []
         for row in range(self.table.rowCount()):
             key_item = self.table.item(row, 0)
             combo_widget = self.table.cellWidget(row, 1)
-
             if not key_item or not combo_widget:
                 continue
             data.append({"Key": key_item.text(), "Value": combo_widget.currentData()})
-        self.handler.write_array_config(self.handler.keymap_file, "CustomKeymap", data)
+
+        self.dbus.set_sub_config_list("custom_keymap", "CustomKeymap", data)
         if not quiet:
             QMessageBox.information(self, _("Success"), _("Keymap saved successfully."))
 

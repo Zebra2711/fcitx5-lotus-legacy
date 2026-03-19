@@ -25,7 +25,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
 from i18n import _
-from core.file_handler import Fcitx5ConfigHandler
 from core.dbus_handler import LotusDBusHandler
 from ui.pages.base_editor import BaseEditorPage
 from ui.pages.dynamic_settings import CardWidget
@@ -36,12 +35,10 @@ class MacroEditorPage(BaseEditorPage):
 
     def __init__(
         self,
-        config_handler: Fcitx5ConfigHandler,
         dbus_handler: LotusDBusHandler,
         parent=None,
     ):
         super().__init__(parent)
-        self.handler = config_handler
         self.dbus = dbus_handler
         self._setup_ui()
         self.load_data()
@@ -154,7 +151,7 @@ class MacroEditorPage(BaseEditorPage):
                 )
 
             self.table.setRowCount(0)
-            data = self.handler.read_array_config(self.handler.macro_file, "Macro")
+            data = self.dbus.get_sub_config_list("lotus-macro", "Macro")
             for item in data:
                 self.upsert_row(item.get("Key", ""), item.get("Value", ""))
         finally:
@@ -201,7 +198,7 @@ class MacroEditorPage(BaseEditorPage):
                 {"Key": key_item.text(), "Value": val_item.text() if val_item else ""}
             )
 
-        self.handler.write_array_config(self.handler.macro_file, "Macro", data)
+        self.dbus.set_sub_config_list("lotus-macro", "Macro", data)
         if not quiet:
             QMessageBox.information(self, _("Success"), _("Macros saved successfully."))
 

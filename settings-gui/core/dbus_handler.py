@@ -43,6 +43,41 @@ class LotusDBusHandler:
         except Exception as e:
             print(f"Failed to set config: {e}")
 
+    def get_sub_config_list(self, path: str, root_key: str) -> list:
+        """Get sub config list from Fcitx5 and convert to Python list."""
+        if not self.iface:
+            return []
+        try:
+            full_path = f"{self.addon_name}/{path}"
+            values, metadata = self.iface.GetConfig(full_path)
+            clean_values = self._clean_dbus(values)
+
+            array_dict = clean_values.get(root_key, {})
+            if isinstance(array_dict, dict):
+                sorted_keys = sorted(
+                    array_dict.keys(), key=lambda x: int(x) if str(x).isdigit() else x
+                )
+                return [array_dict[k] for k in sorted_keys]
+            elif isinstance(array_dict, list):
+                return array_dict
+            return []
+        except Exception as e:
+            print(f"Failed to fetch sub config ({path}): {e}")
+            return []
+
+    def set_sub_config_list(self, path: str, root_key: str, data_list: list):
+        """Set sub config list and send to Fcitx5."""
+        if not self.iface:
+            return
+        try:
+            full_path = f"{self.addon_name}/{path}"
+            fcitx_array = {str(i): item for i, item in enumerate(data_list)}
+            dbus_payload = {root_key: fcitx_array}
+            dbus_dict = self._prepare_dbus_data(dbus_payload)
+            self.iface.SetConfig(full_path, dbus_dict)
+        except Exception as e:
+            print(f"Failed to set sub config ({path}): {e}")
+
     def _prepare_dbus_data(self, data):
         """Prepare data to be sent to Fcitx5 in dbus types with signatures."""
         if isinstance(data, dict):
