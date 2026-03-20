@@ -317,6 +317,20 @@ end
 systemctl status fcitx5-lotus-server@$(whoami).service
 ```
 
+> [!IMPORTANT]
+> If you are using **OpenRC** instead of **systemd**, run the following commands:
+>
+> ```sh
+> sudo rc-update add fcitx5-lotus
+> sudo ln -s /etc/init.d/fcitx5-lotus /etc/init.d/fcitx5-lotus.$(whoami)
+> sudo rc-service fcitx5-lotus.$(whoami) restart
+> ```
+> To check the service status:
+>
+> ```sh
+> rc-service fcitx5-lotus.$(whoami) status
+> ```
+
 ### 2. Thiết lập biến môi trường
 
 Bộ gõ sẽ không hoạt động nếu thiếu các biến này.
@@ -451,7 +465,7 @@ Sau khi đã log out và log in lại:
   <summary><b>Cấu hình thêm cho Wayland (KDE, Hyprland, Chromium-based, Electron)</b></summary>
    
 - **KDE Plasma:** _System Settings_ → _Keyboard_ → _Virtual Keyboard_ → Chọn **Fcitx 5**.
-- **Hyprland:** Thêm dòng sau vào `~/.config/hypr/hyprland.conf`:
+- **Hyprland:** Nếu dùng `ecosystem:enforce_permissions=1` thì phải thêm dòng sau vào `~/.config/hypr/hyprland.conf`:
 
 ```ini
 permission = fcitx5-lotus-server, keyboard, allow
