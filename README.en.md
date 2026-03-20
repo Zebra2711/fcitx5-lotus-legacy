@@ -486,6 +486,20 @@ Add this line to file `~/.config/kanata/kanata.kbd`
 
 </details>
 
+<details>
+   <summary><b>Additional configurattion for OpenRC</b></summary>
+
+Add this line to `/etc/environment` to fix input issues for X11/XCB applications on Wayland:
+
+```sh
+DBUS_SESSION_BUS_ADDRESS="autolaunch:"
+```
+Or set the env in your DE/WM config (Recommended).
+
+Example for Hyprland: `env = DBUS_SESSION_BUS_ADDRESS,autolaunch:`
+
+</details>
+
 ---
 
 <a id="usage-guide"></a>
