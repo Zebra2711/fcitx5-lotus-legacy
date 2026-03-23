@@ -3,7 +3,7 @@
 %global optflags %(echo "%{optflags}" | sed 's/-g[^ ]*//g')
 
 Name:           fcitx5-lotus
-Version:        1.6.0
+Version:        1.6.1
 Release:        1
 Summary:        Vietnamese input method for fcitx5
 License:        GPL-3.0-or-later
@@ -157,7 +157,7 @@ fi
 %systemd_postun_with_restart fcitx5-lotus-server@.service
 
 %changelog
-* Mon Mar 23 2026 Nguyen Hoang Ky <nhktmdzhg@gmail.com> - 1.6.0-1
+* Mon Mar 23 2026 Nguyen Hoang Ky <nhktmdzhg@gmail.com> - 1.6.1-1
 - Add mode manager
 - Add OpenRC support
 - Macro validate, search macro
