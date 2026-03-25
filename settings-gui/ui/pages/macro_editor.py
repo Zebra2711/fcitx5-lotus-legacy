@@ -242,7 +242,6 @@ class MacroEditorPage(BaseEditorPage):
                 self._apply_row_highlight(row, key)
                 if sort:
                     self.on_search_changed()  # Re-apply filter
-                self.on_search_changed()  # Re-apply filter
                 self.update_button_states()
                 return
 
@@ -261,8 +260,8 @@ class MacroEditorPage(BaseEditorPage):
         """Checks if macro key contains spaces or non-letter characters."""
         if not key:
             return False
-        # Allow alphanumeric characters (including Unicode letters) and no spaces
-        return not key.isalnum() or " " in key
+        # Allow alphanumeric characters (including Unicode letters)
+        return not key.isalnum()
 
     def _apply_row_highlight(self, row: int, key: str):
         """Applies red background and warning icon to rows with invalid keys."""

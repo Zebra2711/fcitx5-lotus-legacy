@@ -29,7 +29,8 @@ namespace fcitx {
     constexpr int      MAX_SCAN_LENGTH = 15;
 
     static inline bool isWordBreak(uint32_t ucs4) {
-        return ucs4 == ' ' || ucs4 == '\t' || ucs4 == '\n' || ucs4 == '\r' || ucs4 == 0 || (ucs4 < 65 && ucs4 > 57);
+        // Space, tab, newline, carriage return, null, or punctuation/symbols (: ; < = > ? @)
+        return ucs4 == ' ' || ucs4 == '\t' || ucs4 == '\n' || ucs4 == '\r' || ucs4 == 0 || (ucs4 >= 58 && ucs4 <= 64);
     }
 
     LotusState::LotusState(LotusEngine* engine, InputContext* ic) : engine_(engine), ic_(ic) {
@@ -68,7 +69,9 @@ namespace fcitx {
             .outputCharset       = engine_->config().outputCharset->data(),
             .modernStyle         = *engine_->config().modernStyle,
             .freeMarking         = *engine_->config().freeMarking,
+            .w2u                 = *engine_->config().w2u,
         };
+
         EngineSetOption(lotusEngine_.handle(), &option);
     }
 
@@ -236,15 +239,16 @@ namespace fcitx {
     }
 
     void LotusState::handleEmojiMode(KeyEvent& keyEvent) {
-        if (keyEvent.key().hasModifier()) {
+        const KeySym currentSym      = keyEvent.rawKey().sym();
+        bool         isCtrlBackspace = isBackspace(currentSym) && (keyEvent.rawKey().states() & KeyState::Ctrl);
+
+        if (keyEvent.key().hasModifier() && !isCtrlBackspace) {
             keyEvent.forward();
             return;
         }
 
-        const KeySym currentSym = keyEvent.rawKey().sym();
-
-        auto         baseList   = ic_->inputPanel().candidateList();
-        auto         commonList = std::dynamic_pointer_cast<CommonCandidateList>(baseList);
+        auto baseList   = ic_->inputPanel().candidateList();
+        auto commonList = std::dynamic_pointer_cast<CommonCandidateList>(baseList);
         if (commonList && currentSym >= FcitxKey_1 && currentSym <= FcitxKey_9) {
             int offset      = currentSym - FcitxKey_1;
             int globalIndex = (commonList->currentPage() * commonList->pageSize()) + offset;
@@ -329,9 +333,13 @@ namespace fcitx {
 
         if (isBackspace(currentSym)) {
             if (!emojiBuffer_.empty()) {
-                emojiBuffer_.pop_back();
-                while (!emojiBuffer_.empty() && (emojiBuffer_.back() & 0xC0) == 0x80) {
+                if (isCtrlBackspace) {
+                    emojiBuffer_.clear();
+                } else {
                     emojiBuffer_.pop_back();
+                    while (!emojiBuffer_.empty() && (emojiBuffer_.back() & 0xC0) == 0x80) {
+                        emojiBuffer_.pop_back();
+                    }
                 }
                 keyEvent.filterAndAccept();
             } else {

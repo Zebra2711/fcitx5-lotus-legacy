@@ -183,6 +183,7 @@ namespace fcitx {
 #endif
             charsetAction_.get(),          spellCheckAction_.get(),       macroAction_.get(),   capitalizeMacroAction_.get(),
             autoNonVnRestoreAction_.get(), enableDictionaryAction_.get(), settingsAction_.get()};
+
         emptyCustomKeymap_.customKeymap.setValue(std::vector<lotusKeymap>{});
     }
 

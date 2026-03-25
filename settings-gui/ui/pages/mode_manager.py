@@ -226,6 +226,25 @@ class AddAppDialog(QDialog):
                     except (PermissionError, FileNotFoundError):
                         continue # Probably a kernel thread
                     
+                    # Clean process names for NixOS
+                    if name.startswith('.'):
+                        exe_base = os.path.basename(exe)
+                        if exe_base.startswith('.') and exe_base.endswith('-wrapped'):
+                            name = exe_base[1:-8]
+                        elif name.startswith('.' + exe_base) or name == ('.' + exe_base)[:15]:
+                            name = exe_base
+                        else:
+                            clean = name[1:]
+                            # On NixOS, wrapped application names from /proc/<pid>/comm can be truncated.
+                            # We check for partial suffixes of "-wrapped", from longest to shortest.
+                            base_suffix = "-wrapped"
+                            for i in range(len(base_suffix), 1, -1):
+                                if clean.endswith(base_suffix[:i]):
+                                    clean = clean[:-i]
+                                    break
+                            if clean:
+                                name = clean
+
                     # Exclude common system/background paths
                     exclude_paths = ["/usr/lib", "/usr/libexec", "/lib", "/systemd", "/usr/sbin"]
                     if any(exe.startswith(p) for p in exclude_paths):
@@ -493,6 +512,13 @@ class ModeManagerPage(QWidget):
             os.path.expanduser("~/.local/share/flatpak/exports/share/applications"),
             "/var/lib/snapd/desktop/applications",
         ]
+
+        xdg_data_dirs = os.environ.get("XDG_DATA_DIRS", "").split(":")
+        for directory in xdg_data_dirs:
+            if directory:
+                xdg_applications_path = os.path.join(directory, "applications")
+                if xdg_applications_path not in search_paths:
+                    search_paths.append(xdg_applications_path)
         
         # Priority 1: Direct binary names from Exec line
         # Priority 2: Desktop filenames (e.g. com.discordapp.Discord -> Discord)
