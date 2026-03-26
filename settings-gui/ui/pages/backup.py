@@ -218,7 +218,6 @@ class BackupPage(QWidget):
 
             self.restore_group.setVisible(True)
             self.btn_restore.setVisible(True)
-            self.btn_restore.setVisible(True)
 
         except Exception as e:
             QMessageBox.critical(self, _("Error"), _("Failed to open backup file:\n") + str(e))

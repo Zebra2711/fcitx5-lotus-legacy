@@ -329,7 +329,7 @@ class KeymapEditorPage(BaseEditorPage):
         self.btn_remove.setToolTip(_("Remove selected row"))
         self.btn_remove.clicked.connect(self.on_remove)
 
-        self.btn_remove.clicked.connect(self.on_remove)
+
 
         toolbar_layout.addWidget(self.btn_remove)
         toolbar_layout.addStretch()
