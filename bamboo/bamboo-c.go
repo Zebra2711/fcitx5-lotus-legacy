@@ -240,7 +240,6 @@ func EngineRebuildFromText(engine uintptr, text *C.cchar) {
 }
 
 func toCStringArray(strs []string) **C.char {
-
 	array := C.malloc(C.size_t(len(strs)+1) * C.size_t(unsafe.Sizeof(uintptr(0))))
 	// convert the C array to a Go Array so we can index it
 	a := (*[1<<20 - 1]*C.char)(array)
@@ -292,11 +291,14 @@ func GetInputMethodNames() **C.char {
 	return toCStringArray(names)
 }
 
-
 //export NewDictionary
 func NewDictionary(fd uintptr) uintptr {
 	var data = map[string]bool{}
 	f := os.NewFile(fd, "dict")
+	if f == nil {
+		return 0
+	}
+	defer f.Close()
 	rd := bufio.NewReader(f)
 	for {
 		line, _, err := rd.ReadLine()

@@ -32,6 +32,88 @@
 #include <sys/un.h>
 
 /**
+ * @brief RAII Wrapper for Unix File Descriptors.
+ * Ensures that close() is called when the object goes out of scope.
+ * Complies with Rule of Five by disabling copy and implementing move.
+ */
+class FdGuard {
+  public:
+    explicit FdGuard(int fd = -1) : fd_(fd) {}
+    ~FdGuard();
+
+    // Rule of Five: Disable copying, allow moving
+    FdGuard(const FdGuard&)            = delete;
+    FdGuard& operator=(const FdGuard&) = delete;
+    FdGuard(FdGuard&& other) noexcept;
+    FdGuard& operator=(FdGuard&& other) noexcept;
+
+    int      get() const {
+        return fd_;
+    }
+    bool is_valid() const {
+        return fd_ >= 0;
+    }
+    void reset(int new_fd = -1);
+
+  private:
+    int fd_;
+};
+
+/**
+ * @brief RAII Wrapper for uinput device.
+ * Handles UI_DEV_CREATE and UI_DEV_DESTROY automatically.
+ */
+class UinputDevice {
+  public:
+    UinputDevice() = default;
+    ~UinputDevice();
+
+    // Disable copy, allow move
+    UinputDevice(const UinputDevice&)            = delete;
+    UinputDevice& operator=(const UinputDevice&) = delete;
+    UinputDevice(UinputDevice&&)                 = default;
+    UinputDevice& operator=(UinputDevice&&)      = default;
+
+    bool          initialize();
+    void          send_backspace();
+    int           get_fd() const {
+        return guard_.get();
+    }
+
+  private:
+    FdGuard guard_;
+};
+
+/**
+ * @brief RAII Wrapper for Libinput and Udev contexts.
+ */
+class LibinputContext {
+  public:
+    LibinputContext(const struct libinput_interface* interface);
+    ~LibinputContext();
+
+    // Disable copy, allow move
+    LibinputContext(const LibinputContext&)            = delete;
+    LibinputContext& operator=(const LibinputContext&) = delete;
+    LibinputContext(LibinputContext&&)                 = default;
+    LibinputContext& operator=(LibinputContext&&)      = default;
+
+    bool             is_valid() const {
+        return li_ != nullptr;
+    }
+    struct libinput* get_li() const {
+        return li_;
+    }
+    int get_fd() const {
+        return libinput_get_fd(li_);
+    }
+
+  private:
+    struct udev*     udev_ = nullptr;
+    struct libinput* li_   = nullptr;
+};
+
+/**
  * @brief Maximum length of Unix socket paths.
 */
 #define UNIX_PATH_MAX sizeof(((struct sockaddr_un*)0)->sun_path)
@@ -67,11 +149,6 @@ void boost_process_priority();
  * @brief Pins process to performance cores (cores 0-3).
  */
 void pin_to_pcore();
-
-/**
- * @brief Sends a single backspace key event via uinput.
- */
-void send_single_backspace();
 
 /**
  * @brief Opens input device with restricted permissions.
