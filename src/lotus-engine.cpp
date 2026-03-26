@@ -318,7 +318,9 @@ namespace fcitx {
 
     void LotusEngine::activate(const InputMethodEntry& entry, InputContextEvent& event) {
         FCITX_UNUSED(entry);
-        auto*                    ic = event.inputContext();
+        auto*                    ic        = event.inputContext();
+        const bool               surrvalid = ic->surroundingText().isValid();
+        const bool               is_dbus   = (ic->frontend() != nullptr) && strcmp(ic->frontend(), "dbus") == 0;
         static std::atomic<bool> mouseThreadStarted{false};
         if (!mouseThreadStarted.exchange(true))
             startMouseReset();
@@ -332,7 +334,7 @@ namespace fcitx {
 
         const LotusMode targetMode = getAppRule(appName);
         LOTUS_INFO("Target mode: " + modeEnumToString(targetMode));
-        reloadConfig();
+
         updateCharsetAction(event.inputContext());
 
         setMode(targetMode, event.inputContext());
@@ -342,22 +344,27 @@ namespace fcitx {
         state->waitAck_ = false;
         if (*config_.fixUinputWithAck) {
             if (targetMode == LotusMode::Uinput || targetMode == LotusMode::UinputHC || targetMode == LotusMode::Smooth) {
+                if (is_dbus) {
 #if __cplusplus >= 202002L
-                std::ranges::transform(appName, appName.begin(), ::tolower);
+                    std::ranges::transform(appName, appName.begin(), ::tolower);
 #else
-                std::transform(appName.begin(), appName.end(), appName.begin(), ::tolower);
+                    std::transform(appName.begin(), appName.end(), appName.begin(), ::tolower);
 #endif
-                for (const auto& ackApp : ack_apps) {
-                    if (appName.find(ackApp) != std::string::npos) {
-                        state->waitAck_ = true;
-                        LOTUS_INFO(ackApp + " detected, waiting for ack");
-                        break;
+                    for (const auto& ackApp : ack_apps) {
+                        if (appName.find(ackApp) != std::string::npos) {
+                            state->waitAck_ = true;
+                            LOTUS_INFO(ackApp + " detected, waiting for ack");
+                            break;
+                        }
                     }
                 }
             }
         }
-
-        state->clearAllBuffers();
+        if (event.type() == EventType::InputContextFocusIn && is_dbus && !surrvalid) {
+            LOTUS_INFO("Skip clearAllBuffers");
+        } else if (surrvalid && !state->oldPreBuffer_.empty() && (now_ms() - state->lastDeactivateTime_) < 100) {
+            state->clearAllBuffers();
+        }
         is_deleting_.store(false);
         needEngineReset.store(false);
         if (targetMode == LotusMode::Emoji) {
@@ -567,12 +574,21 @@ namespace fcitx {
 
     void LotusEngine::deactivate(const InputMethodEntry& entry, InputContextEvent& event) {
         FCITX_UNUSED(entry);
-        auto* ic    = event.inputContext();
-        auto* state = ic->propertyFor(&factory_);
+        auto*      ic              = event.inputContext();
+        auto*      state           = ic->propertyFor(&factory_);
+        const bool surrvalid       = ic->surroundingText().isValid();
+        const bool is_dbus         = (ic->frontend() != nullptr) && strcmp(ic->frontend(), "dbus") == 0;
+        state->lastDeactivateTime_ = now_ms();
         if (realMode == LotusMode::Preedit && event.type() != EventType::InputContextFocusOut) {
             state->commitBuffer();
         } else {
-            state->clearAllBuffers();
+            if (event.type() == EventType::InputContextFocusOut && is_dbus && !surrvalid) {
+                state->lastDeactivateTime_ = now_ms();
+                LOTUS_INFO("Skip clearAllBuffers");
+            } else {
+                if (surrvalid && state->oldPreBuffer_.empty())
+                    state->clearAllBuffers();
+            }
             is_deleting_.store(false);
             needEngineReset.store(false);
             ic->inputPanel().reset();

@@ -156,10 +156,14 @@ namespace fcitx {
         const size_t       textLen = utf8::length(text);
 
         // Fix that surrounding text is delay update
-        const size_t buffLen    = utf8::length(oldPreBuffer_);
-        const size_t pb         = text.find(oldPreBuffer_);
-        size_t       rangeStart = buffLen >= static_cast<size_t>(cursor) ? 0 : static_cast<size_t>(cursor) - buffLen;
-        const bool   sameprefix = pb != std::string::npos && pb >= rangeStart && pb <= static_cast<size_t>(cursor);
+        const size_t buffLen       = utf8::length(oldPreBuffer_);
+        const size_t pb            = text.find(oldPreBuffer_);
+        size_t       rangeStart    = buffLen >= static_cast<size_t>(cursor) ? 0 : static_cast<size_t>(cursor) - buffLen;
+        size_t       currSuffixLen = textLen > static_cast<size_t>(cursor) ? textLen - static_cast<size_t>(cursor) : 0;
+        if (prevSurrSuffixLen_ != currSuffixLen && cursor < realtextLen)
+            realtextLen = cursor;
+        prevSurrSuffixLen_    = currSuffixLen;
+        const bool sameprefix = pb != std::string::npos && pb >= rangeStart && pb <= static_cast<size_t>(cursor);
 
         // Detect browser autofill/autocomplete suggestions via selection.
         if (cursor != anchor) {
@@ -240,7 +244,7 @@ namespace fcitx {
 
     void LotusState::handleEmojiMode(KeyEvent& keyEvent) {
         const KeySym currentSym      = keyEvent.rawKey().sym();
-        bool         isCtrlBackspace = isBackspace(currentSym) && (keyEvent.rawKey().states() & KeyState::Ctrl);
+        bool         isCtrlBackspace = isBackspace(currentSym) && ((keyEvent.rawKey().states() & KeyState::Ctrl) != 0U);
 
         if (keyEvent.key().hasModifier() && !isCtrlBackspace) {
             keyEvent.forward();
@@ -457,6 +461,20 @@ namespace fcitx {
             replacement_start_ms_.store(0, std::memory_order_release);
             replacement_thread_id_.store(0, std::memory_order_release);
             std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
+            // Validate surr cursor pos should match realtextLen after all BS applied
+            const auto& surr = ic_->surroundingText();
+            if (surr.isValid() && surr.cursor() == realtextLen) {
+                LOTUS_INFO("Skip retry");
+            } else {
+                // Retry x3 (2 ms each), khi can (chromium,electron,...)
+                for (int retry = 0; retry < 3; ++retry) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                    const auto& surr2 = ic_->surroundingText();
+                    if (surr2.isValid() && surr2.cursor() == realtextLen) {
+                        break;
+                    }
+                }
+            }
             ic_->commitString(pending_commit_string_);
             LOTUS_INFO("Commit: " + pending_commit_string_);
             expected_backspaces_     = 0;
@@ -464,7 +482,8 @@ namespace fcitx {
             pending_commit_string_   = "";
 
             event.filterAndAccept(); // Filter out the final trigger backspace.
-            replayBufferedKeys();
+            if (std::string(ic_->frontend()) == "dbus" && !ic_->surroundingText().isValid())
+                replayBufferedKeys(); // Does we need drop this?
             return true;
         }
         return false;
@@ -493,6 +512,10 @@ namespace fcitx {
     void LotusState::checkForwardSpecialKey(KeyEvent& keyEvent, KeySym& currentSym) {
         if (keyEvent.key().isCursorMove() || currentSym == FcitxKey_Tab || currentSym == FcitxKey_KP_Tab || currentSym == FcitxKey_ISO_Left_Tab || currentSym == FcitxKey_Escape ||
             keyEvent.key().hasModifier()) {
+            is_deleting_.store(false, std::memory_order_release);
+            expected_backspaces_     = 0;
+            current_backspace_count_ = 0;
+            pending_commit_string_.clear();
             history_.clear();
             ResetEngine(lotusEngine_.handle());
             oldPreBuffer_.clear();
@@ -886,6 +909,11 @@ namespace fcitx {
             needEngineReset.store(false);
         }
 
+        if (g_mouse_clicked.load(std::memory_order_relaxed) && !is_deleting_.load()) {
+            g_mouse_clicked.store(false, std::memory_order_relaxed);
+            clearAllBuffers();
+        }
+
         if (needFallbackCommit.load(std::memory_order_acquire)) {
             LOTUS_INFO("Need fallback commit");
             needFallbackCommit.store(false, std::memory_order_release);
@@ -897,7 +925,8 @@ namespace fcitx {
             }
             replacement_thread_id_.store(0, std::memory_order_release);
             replacement_start_ms_.store(0, std::memory_order_release);
-            replayBufferedKeys();
+            if (std::string(ic_->frontend()) == "dbus" && !ic_->surroundingText().isValid())
+                replayBufferedKeys(); // Does we need drop this?
         }
         KeySym currentSym = keyEvent.rawKey().sym();
         if (*engine_->config().autoCapitalizeAfterPunctuation && realMode != LotusMode::Off) {
@@ -1005,6 +1034,9 @@ namespace fcitx {
         const auto& text        = surrounding.text();
         size_t      textLen     = utf8::length(text);
         realtextLen             = textLen;
+        if (surrounding.isValid()) {
+            prevSurrSuffixLen_ = textLen > static_cast<size_t>(surrounding.cursor()) ? textLen - static_cast<size_t>(surrounding.cursor()) : 0;
+        }
         if (is_deleting_.load(std::memory_order_acquire)) {
             return;
         }
@@ -1024,8 +1056,8 @@ namespace fcitx {
             }
             ResetEngine(lotusEngine_.handle());
         }
-
-        clearAllBuffers();
+        if (std::string(ic_->frontend()) != "dbus")
+            clearAllBuffers();
 
         switch (realMode) {
             case LotusMode::Preedit: {

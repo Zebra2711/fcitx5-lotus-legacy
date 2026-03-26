@@ -19,6 +19,8 @@ def main():
     """Main execution function."""
     setup_i18n()
     app = QApplication(sys.argv)
+    app.setDesktopFileName("org.fcitx.Fcitx5.Addon.Lotus.Settings")
+    app.setApplicationName("org.fcitx.Fcitx5.Addon.Lotus.Settings")
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     app.setWindowIcon(QIcon.fromTheme("fcitx-lotus"))
 

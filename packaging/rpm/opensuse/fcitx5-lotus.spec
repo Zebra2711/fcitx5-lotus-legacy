@@ -1,9 +1,5 @@
-%define _lto_cflags %{nil}
-
-%global optflags %(echo "%{optflags}" | sed 's/-g[^ ]*//g')
-
 Name:           fcitx5-lotus
-Version:        1.6.1
+Version:        1.7.0
 Release:        1
 Summary:        Vietnamese input method for fcitx5
 License:        GPL-3.0-or-later
@@ -156,10 +152,8 @@ fi
 %systemd_postun_with_restart fcitx5-lotus-server@.service
 
 %changelog
-* Mon Mar 23 2026 Nguyen Hoang Ky <nhktmdzhg@gmail.com> - 1.6.1-1
-- Add mode manager
-- Add OpenRC support
-- Macro validate, search macro
-- Auto capitalization
-- Fix show input engine mode name on gnome shell
-- Custom dictionary
+* Thu Mar 26 2026 Nguyen Hoang Ky <nhktmdzhg@gmail.com> - 1.7.0-1
+- Fix bug cannot use ctrl + backspace to delete word in emoji mode
+- Add w->ư option
+- Add invalid macro check
+- Fix some behavior of uinput mode on browser's search bar

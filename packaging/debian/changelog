@@ -1,10 +1,8 @@
-fcitx5-lotus (1.6.1-1) unstable; urgency=medium
+fcitx5-lotus (1.7.0-1) unstable; urgency=medium
 
-  * Add mode manager
-  * Add OpenRC support
-  * Macro validate, search macro
-  * Auto capitalization
-  * Fix show input engine mode name on gnome shell
-  * Custom dictionary
+  * Fix bug cannot use ctrl + backspace to delete word in emoji mode
+  * Add w->ư option
+  * Add invalid macro check
+  * Fix some behavior of uinput mode on browser's search bar
 
- -- Nguyen Hoang Ky <nhktmdzhg@gmail.com>  Mon, 23 Mar 2026 15:19:00 +0700
+ -- Nguyen Hoang Ky <nhktmdzhg@gmail.com>  Thu, 26 Mar 2026 11:09:00 +0700
