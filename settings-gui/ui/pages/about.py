@@ -61,7 +61,7 @@ class AboutPage(QWidget):
         title.setObjectName("AboutTitle")
         layout.addWidget(title, alignment=Qt.AlignCenter)
 
-        version = QLabel(_(f"Version {__version__}"))
+        version = QLabel(_("Version {}").format(__version__))
         version.setObjectName("VersionTag")
         version.setAlignment(Qt.AlignCenter)
         version.setStyleSheet("""

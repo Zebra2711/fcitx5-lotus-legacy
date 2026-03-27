@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-26 11:05+0700\n"
+"POT-Creation-Date: 2026-03-27 09:46+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -25,8 +25,8 @@ msgstr ""
 msgid "Value"
 msgstr ""
 
-#: src/lotus-config.h:181 src/lotus-config.h:214 src/lotus-engine.cpp:150
-#: src/lotus-engine.cpp:292
+#: src/lotus-config.h:181 src/lotus-config.h:214 src/lotus-engine.cpp:151
+#: src/lotus-engine.cpp:302
 msgid "Macro"
 msgstr ""
 
@@ -54,15 +54,15 @@ msgstr ""
 msgid "Output Charset"
 msgstr ""
 
-#: src/lotus-config.h:202 src/lotus-engine.cpp:149
+#: src/lotus-config.h:202 src/lotus-engine.cpp:150
 msgid "Enable Spell Check"
 msgstr ""
 
-#: src/lotus-config.h:202 src/lotus-engine.cpp:150
+#: src/lotus-config.h:202 src/lotus-engine.cpp:151
 msgid "Enable Macro"
 msgstr ""
 
-#: src/lotus-config.h:203 src/lotus-engine.cpp:151 src/lotus-engine.cpp:293
+#: src/lotus-config.h:203 src/lotus-engine.cpp:152 src/lotus-engine.cpp:303
 msgid "Capitalize Macro"
 msgstr ""
 
@@ -80,7 +80,7 @@ msgstr ""
 msgid "Type w to Produce ư"
 msgstr ""
 
-#: src/lotus-config.h:206
+#: src/lotus-config.h:206 src/lotus-engine.cpp:154
 msgid "Auto Restore Keys With Invalid Words"
 msgstr ""
 
@@ -104,7 +104,7 @@ msgstr ""
 msgid "Use Lotus Status Icons"
 msgstr ""
 
-#: src/lotus-config.h:212 src/lotus-engine.cpp:155
+#: src/lotus-config.h:212 src/lotus-engine.cpp:156
 msgid "Enable Custom Dictionary"
 msgstr ""
 
@@ -120,75 +120,71 @@ msgstr ""
 msgid "Mode Menu Hotkey"
 msgstr ""
 
-#: src/lotus-engine.cpp:122
+#: src/lotus-engine.cpp:123
 msgid "Charset"
 msgstr ""
 
-#: src/lotus-engine.cpp:149 src/lotus-engine.cpp:291
+#: src/lotus-engine.cpp:150 src/lotus-engine.cpp:301
 msgid "Spell Check"
 msgstr ""
 
-#: src/lotus-engine.cpp:153
-msgid "Auto Restore Keys With Invalid Wwords"
-msgstr ""
-
-#: src/lotus-engine.cpp:154 src/lotus-engine.cpp:294
+#: src/lotus-engine.cpp:155 src/lotus-engine.cpp:304
 msgid "Auto Non-VN Restore"
 msgstr ""
 
-#: src/lotus-engine.cpp:155 src/lotus-engine.cpp:295
+#: src/lotus-engine.cpp:156 src/lotus-engine.cpp:305
 msgid "Custom Dictionary"
 msgstr ""
 
-#: src/lotus-engine.cpp:159
+#: src/lotus-engine.cpp:160
 msgid "Settings"
 msgstr ""
 
-#: src/lotus-engine.cpp:762
+#: src/lotus-engine.cpp:772
 msgid "App: "
 msgstr ""
 
-#: src/lotus-engine.cpp:763
+#: src/lotus-engine.cpp:773
 msgid "[1] Uinput (Smooth)"
 msgstr ""
 
-#: src/lotus-engine.cpp:764
+#: src/lotus-engine.cpp:774
 msgid "[2] Uinput (Slow)"
 msgstr ""
 
-#: src/lotus-engine.cpp:765
+#: src/lotus-engine.cpp:775
 msgid "[3] Uinput (Hardcore)"
 msgstr ""
 
-#: src/lotus-engine.cpp:766
+#: src/lotus-engine.cpp:776
 msgid "[4] Surrounding Text"
 msgstr ""
 
-#: src/lotus-engine.cpp:767
+#: src/lotus-engine.cpp:777
 msgid "[q] Preedit"
 msgstr ""
 
-#: src/lotus-engine.cpp:768
+#: src/lotus-engine.cpp:778
 msgid "[w] Emoji Picker"
 msgstr ""
 
-#: src/lotus-engine.cpp:769
+#: src/lotus-engine.cpp:779
 msgid "[e] OFF"
 msgstr ""
 
-#: src/lotus-engine.cpp:771
+#: src/lotus-engine.cpp:781
 msgid "[r] Default Typing"
 msgstr ""
 
-#: src/lotus-engine.cpp:783
+#: src/lotus-engine.cpp:793
 msgid "Type"
 msgstr ""
 
-#: src/lotus-engine.cpp:838
+#: src/lotus-engine.cpp:848
 msgid "Lotus - Off"
 msgstr ""
 
-#: src/lotus-state.cpp:241
+#: src/lotus-state.cpp:240
 msgid "Page "
 msgstr ""
 
@@ -207,6 +203,11 @@ msgid ""
 msgstr ""
 
 msgid "Lotus Wrapper For Fcitx"
+msgstr ""
+
+#: settings-gui/ui/pages/about.py:64
+#, python-brace-format
+msgid "Version {}"
 msgstr ""
 
 #: settings-gui/ui/pages/about.py:79
@@ -239,10 +240,8 @@ msgstr ""
 msgid "Save Debug Log"
 msgstr ""
 
-#: settings-gui/ui/pages/about.py:206 settings-gui/ui/pages/dict_editor.py:247
-#: settings-gui/ui/pages/keymap_editor.py:409
-#: settings-gui/ui/pages/macro_editor.py:235
-#: settings-gui/ui/pages/mode_manager.py:807 settings-gui/ui/main_window.py:256
+#: settings-gui/ui/pages/about.py:206 settings-gui/ui/pages/backup.py:183
+#: settings-gui/ui/pages/backup.py:296 settings-gui/ui/main_window.py:252
 msgid "Success"
 msgstr ""
 
@@ -250,15 +249,131 @@ msgstr ""
 msgid "Debug logs exported successfully to:\n"
 msgstr ""
 
-#: settings-gui/ui/pages/about.py:208 settings-gui/ui/pages/dict_editor.py:249
+#: settings-gui/ui/pages/about.py:208 settings-gui/ui/pages/backup.py:188
+#: settings-gui/ui/pages/backup.py:242 settings-gui/ui/pages/backup.py:314
+#: settings-gui/ui/pages/dict_editor.py:247
 #: settings-gui/ui/pages/mode_manager.py:704
 #: settings-gui/ui/pages/mode_manager.py:787
-#: settings-gui/ui/pages/mode_manager.py:811
 msgid "Error"
 msgstr ""
 
 #: settings-gui/ui/pages/about.py:208
 msgid "Failed to export logs:\n"
+msgstr ""
+
+#: settings-gui/ui/pages/dynamic_settings.py:117
+msgid "Failed to load configuration."
+msgstr ""
+
+#: settings-gui/ui/pages/dynamic_settings.py:165
+msgid "No interface settings available yet."
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:52
+msgid "Backup & Restore"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:57
+msgid "Export/Import Settings"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:61
+msgid ""
+"Save your configurations to a JSON file, or restore them from a .lotusbak "
+"file. Select what you want to include:"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:70 settings-gui/ui/pages/backup.py:216
+msgid "Main Settings"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:71 settings-gui/ui/pages/backup.py:217
+#: settings-gui/ui/pages/macro_editor.py:52 settings-gui/ui/main_window.py:175
+msgid "Macros"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:72 settings-gui/ui/pages/backup.py:218
+msgid "Custom Keymaps"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:73 settings-gui/ui/pages/backup.py:219
+msgid "Application Rules"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:85
+msgid "Export Backup..."
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:91
+msgid "Import Backup..."
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:101
+msgid "Items found in backup:"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:107
+msgid "Restore Selected Now"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:132 settings-gui/ui/pages/backup.py:255
+msgid "Warning"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:132
+msgid "Please select at least one item to export."
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:141
+msgid "Export Backup"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:143 settings-gui/ui/pages/backup.py:197
+msgid "Lotus Backup (*.lotusbak);;All Files (*)"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:183
+msgid "Backup exported successfully to:\n"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:188
+msgid "Failed to export backup:\n"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:195
+msgid "Select Backup File"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:234
+msgid "Invalid backup file: No recognizable components found."
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:242
+msgid "Failed to open backup file:\n"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:255
+msgid "Please select at least one item to restore."
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:261
+msgid "Confirm Restore"
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:263
+msgid ""
+"Are you sure you want to restore the selected components? This will "
+"overwrite your current configuration."
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:298
+msgid ""
+"Selected components restored successfully. Some changes may require "
+"restarting Fcitx5."
+msgstr ""
+
+#: settings-gui/ui/pages/backup.py:314
+msgid "Failed to restore backup:\n"
 msgstr ""
 
 #: settings-gui/ui/pages/dict_editor.py:72
@@ -282,10 +397,10 @@ msgid "Word (e.g. khongdau)"
 msgstr ""
 
 #: settings-gui/ui/pages/dict_editor.py:109
-#: settings-gui/ui/pages/dict_editor.py:322
+#: settings-gui/ui/pages/dict_editor.py:320
 #: settings-gui/ui/pages/keymap_editor.py:301
 #: settings-gui/ui/pages/macro_editor.py:95
-#: settings-gui/ui/pages/macro_editor.py:364
+#: settings-gui/ui/pages/macro_editor.py:357
 msgid "Add"
 msgstr ""
 
@@ -295,86 +410,106 @@ msgstr ""
 
 #: settings-gui/ui/pages/dict_editor.py:135
 #: settings-gui/ui/pages/keymap_editor.py:328
-#: settings-gui/ui/pages/macro_editor.py:125
 #: settings-gui/ui/pages/mode_manager.py:374
+#: settings-gui/ui/pages/macro_editor.py:125
 msgid "Remove"
 msgstr ""
 
-#: settings-gui/ui/pages/dict_editor.py:247
-msgid "Dictionary saved successfully to local storage."
-msgstr ""
-
-#: settings-gui/ui/pages/dict_editor.py:276
-#: settings-gui/ui/pages/dict_editor.py:309
+#: settings-gui/ui/pages/dict_editor.py:274
+#: settings-gui/ui/pages/dict_editor.py:307
 msgid "Warning: Dictionary words should not contain spaces."
 msgstr ""
 
-#: settings-gui/ui/pages/dict_editor.py:318
+#: settings-gui/ui/pages/dict_editor.py:316
 msgid "Exists"
 msgstr ""
 
-#: settings-gui/ui/pages/dict_editor.py:348
+#: settings-gui/ui/pages/dict_editor.py:346
 msgid "Import Custom Dictionary"
 msgstr ""
 
-#: settings-gui/ui/pages/dict_editor.py:350
+#: settings-gui/ui/pages/dict_editor.py:348
 msgid "Dictionary files (*.tsv *.txt);;All files (*)"
 msgstr ""
 
-#: settings-gui/ui/pages/dict_editor.py:371
-#: settings-gui/ui/pages/keymap_editor.py:524
-#: settings-gui/ui/pages/macro_editor.py:409
+#: settings-gui/ui/pages/dict_editor.py:356
+#: settings-gui/ui/pages/keymap_editor.py:500
+#: settings-gui/ui/pages/macro_editor.py:381
+#, python-brace-format
+msgid "Cannot open file for reading: {}"
+msgstr ""
+
+#: settings-gui/ui/pages/dict_editor.py:369
+#: settings-gui/ui/pages/keymap_editor.py:520
 #: settings-gui/ui/pages/mode_manager.py:734
+#: settings-gui/ui/pages/macro_editor.py:402
 msgid "Confirm Import"
 msgstr ""
 
-#: settings-gui/ui/pages/dict_editor.py:373
+#: settings-gui/ui/pages/dict_editor.py:371
 msgid ""
 "The current dictionary is not empty. Imported entries will be merged. "
 "Continue?"
 msgstr ""
 
-#: settings-gui/ui/pages/dict_editor.py:392
-#: settings-gui/ui/pages/keymap_editor.py:554
-#: settings-gui/ui/pages/macro_editor.py:426
+#: settings-gui/ui/pages/dict_editor.py:390
+#: settings-gui/ui/pages/keymap_editor.py:551
 #: settings-gui/ui/pages/mode_manager.py:753
+#: settings-gui/ui/pages/macro_editor.py:419
 msgid "Import Complete"
 msgstr ""
 
-#: settings-gui/ui/pages/dict_editor.py:399
-#: settings-gui/ui/pages/keymap_editor.py:333
-#: settings-gui/ui/pages/keymap_editor.py:562
-#: settings-gui/ui/pages/macro_editor.py:132
-#: settings-gui/ui/pages/macro_editor.py:433
+#: settings-gui/ui/pages/dict_editor.py:391
+#, python-brace-format
+msgid "Imported {} words."
+msgstr ""
+
+#: settings-gui/ui/pages/dict_editor.py:397
+#: settings-gui/ui/pages/keymap_editor.py:559
 #: settings-gui/ui/pages/mode_manager.py:761
+#: settings-gui/ui/pages/macro_editor.py:426
 msgid "Export"
 msgstr ""
 
-#: settings-gui/ui/pages/dict_editor.py:399
+#: settings-gui/ui/pages/dict_editor.py:397
 msgid "The custom dictionary is empty, nothing to export."
 msgstr ""
 
-#: settings-gui/ui/pages/dict_editor.py:404
+#: settings-gui/ui/pages/dict_editor.py:402
 msgid "Export Custom Dictionary"
 msgstr ""
 
-#: settings-gui/ui/pages/dict_editor.py:406
-#: settings-gui/ui/pages/keymap_editor.py:570
-#: settings-gui/ui/pages/macro_editor.py:440
+#: settings-gui/ui/pages/dict_editor.py:404
+#: settings-gui/ui/pages/keymap_editor.py:567
 #: settings-gui/ui/pages/mode_manager.py:695
 #: settings-gui/ui/pages/mode_manager.py:769
+#: settings-gui/ui/pages/macro_editor.py:433
 msgid "Tab-separated (*.tsv);;Text files (*.txt);;All files (*)"
 msgstr ""
 
-#: settings-gui/ui/pages/dict_editor.py:417
-#: settings-gui/ui/pages/keymap_editor.py:587
-#: settings-gui/ui/pages/macro_editor.py:454
+#: settings-gui/ui/pages/dict_editor.py:415
+#: settings-gui/ui/pages/keymap_editor.py:584
 #: settings-gui/ui/pages/mode_manager.py:783
+#: settings-gui/ui/pages/macro_editor.py:447
 msgid "Export Complete"
 msgstr ""
 
+#: settings-gui/ui/pages/dict_editor.py:416
+#, python-brace-format
+msgid ""
+"Exported {} words to:\n"
+"{}"
+msgstr ""
+
+#: settings-gui/ui/pages/dict_editor.py:419
+#: settings-gui/ui/pages/keymap_editor.py:588
+#: settings-gui/ui/pages/macro_editor.py:451
+#, python-brace-format
+msgid "Cannot open file for writing: {}"
+msgstr ""
+
 #: settings-gui/ui/pages/keymap_editor.py:242
-#: settings-gui/ui/main_window.py:194
+#: settings-gui/ui/main_window.py:185
 msgid "Keymap"
 msgstr ""
 
@@ -406,125 +541,51 @@ msgstr ""
 msgid "Remove selected row"
 msgstr ""
 
-#: settings-gui/ui/pages/keymap_editor.py:332
-#: settings-gui/ui/pages/macro_editor.py:131
-msgid "Import"
-msgstr ""
-
-#: settings-gui/ui/pages/keymap_editor.py:409
-msgid "Keymap saved successfully."
-msgstr ""
-
-#: settings-gui/ui/pages/keymap_editor.py:449
+#: settings-gui/ui/pages/keymap_editor.py:445
 msgid "Confirm"
 msgstr ""
 
-#: settings-gui/ui/pages/keymap_editor.py:450
+#: settings-gui/ui/pages/keymap_editor.py:446
 msgid "This operation will replace all existing keys with "
 msgstr ""
 
-#: settings-gui/ui/pages/keymap_editor.py:452
+#: settings-gui/ui/pages/keymap_editor.py:448
 msgid ". Are you sure?"
 msgstr ""
 
-#: settings-gui/ui/pages/keymap_editor.py:493
+#: settings-gui/ui/pages/keymap_editor.py:489
 msgid "Import Keymap"
 msgstr ""
 
-#: settings-gui/ui/pages/keymap_editor.py:495
-#: settings-gui/ui/pages/macro_editor.py:380
+#: settings-gui/ui/pages/keymap_editor.py:491
+#: settings-gui/ui/pages/macro_editor.py:373
 msgid "Tab-separated (*.tsv *.txt);;All files (*)"
 msgstr ""
 
-#: settings-gui/ui/pages/keymap_editor.py:525
+#: settings-gui/ui/pages/keymap_editor.py:521
 msgid "Merge imported entries?"
 msgstr ""
 
-#: settings-gui/ui/pages/keymap_editor.py:562
+#: settings-gui/ui/pages/keymap_editor.py:552
+#: settings-gui/ui/pages/macro_editor.py:420
+#, python-brace-format
+msgid "Imported {} entries, skipped {} invalid lines."
+msgstr ""
+
+#: settings-gui/ui/pages/keymap_editor.py:559
 msgid "The keymap list is empty, nothing to export."
 msgstr ""
 
-#: settings-gui/ui/pages/keymap_editor.py:568
+#: settings-gui/ui/pages/keymap_editor.py:565
 msgid "Export Keymap"
 msgstr ""
 
-#: settings-gui/ui/pages/dynamic_settings.py:117
-msgid "Failed to load configuration."
-msgstr ""
-
-#: settings-gui/ui/pages/dynamic_settings.py:165
-msgid "No interface settings available yet."
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:52 settings-gui/ui/main_window.py:184
-msgid "Macros"
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:68
-msgid "Search macros..."
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:87
-msgid "Abbreviation (e.g. kg)"
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:91
-msgid "Full text (e.g. khô gà)"
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:100
-msgid "Key:"
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:102
-msgid "Value:"
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:109
-msgid "Abbreviation"
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:109
-msgid "Expanded Text"
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:127
-msgid "Move Up"
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:129
-msgid "Move Down"
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:235
-msgid "Macros saved successfully."
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:277
-#: settings-gui/ui/pages/macro_editor.py:347
-msgid "Warning: Macro key should not contain spaces or special characters."
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:361
-msgid "Update"
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:378
-msgid "Import Macros"
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:411
+#: settings-gui/ui/pages/keymap_editor.py:585
+#: settings-gui/ui/pages/macro_editor.py:448
+#, python-brace-format
 msgid ""
-"The current macro list is not empty. Imported entries will be merged. "
-"Continue?"
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:433
-msgid "The macro list is empty, nothing to export."
-msgstr ""
-
-#: settings-gui/ui/pages/macro_editor.py:438
-msgid "Export Macros"
+"Exported {} entries to:\n"
+"{}"
 msgstr ""
 
 #: settings-gui/ui/pages/mode_manager.py:45
@@ -593,7 +654,7 @@ msgstr ""
 msgid "No application selected"
 msgstr ""
 
-#: settings-gui/ui/pages/mode_manager.py:183 settings-gui/ui/main_window.py:149
+#: settings-gui/ui/pages/mode_manager.py:183 settings-gui/ui/main_window.py:140
 msgid "&Cancel"
 msgstr ""
 
@@ -609,7 +670,7 @@ msgstr ""
 msgid "Search applications..."
 msgstr ""
 
-#: settings-gui/ui/pages/mode_manager.py:395 settings-gui/ui/main_window.py:179
+#: settings-gui/ui/pages/mode_manager.py:395 settings-gui/ui/main_window.py:170
 msgid "Applications"
 msgstr ""
 
@@ -641,6 +702,11 @@ msgstr ""
 msgid "Merge imported application rules?"
 msgstr ""
 
+#: settings-gui/ui/pages/mode_manager.py:754
+#, python-brace-format
+msgid "Imported {} rules, skipped {} invalid lines."
+msgstr ""
+
 #: settings-gui/ui/pages/mode_manager.py:761
 msgid "The application rules list is empty, nothing to export."
 msgstr ""
@@ -649,16 +715,78 @@ msgstr ""
 msgid "Export Application Rules"
 msgstr ""
 
+#: settings-gui/ui/pages/mode_manager.py:784
+#, python-brace-format
+msgid ""
+"Exported {} rules to:\n"
+"{}"
+msgstr ""
+
 #: settings-gui/ui/pages/mode_manager.py:787
 msgid "Cannot open file for writing:"
 msgstr ""
 
-#: settings-gui/ui/pages/mode_manager.py:807
-msgid "Application rules saved successfully."
+#: settings-gui/ui/pages/macro_editor.py:68
+msgid "Search macros..."
 msgstr ""
 
-#: settings-gui/ui/pages/mode_manager.py:811
-msgid "Failed to save app rules:"
+#: settings-gui/ui/pages/macro_editor.py:87
+msgid "Abbreviation (e.g. kg)"
+msgstr ""
+
+#: settings-gui/ui/pages/macro_editor.py:91
+msgid "Full text (e.g. khô gà)"
+msgstr ""
+
+#: settings-gui/ui/pages/macro_editor.py:100
+msgid "Key:"
+msgstr ""
+
+#: settings-gui/ui/pages/macro_editor.py:102
+msgid "Value:"
+msgstr ""
+
+#: settings-gui/ui/pages/macro_editor.py:109
+msgid "Abbreviation"
+msgstr ""
+
+#: settings-gui/ui/pages/macro_editor.py:109
+msgid "Expanded Text"
+msgstr ""
+
+#: settings-gui/ui/pages/macro_editor.py:127
+msgid "Move Up"
+msgstr ""
+
+#: settings-gui/ui/pages/macro_editor.py:129
+msgid "Move Down"
+msgstr ""
+
+#: settings-gui/ui/pages/macro_editor.py:270
+#: settings-gui/ui/pages/macro_editor.py:340
+msgid "Warning: Macro key should not contain spaces or special characters."
+msgstr ""
+
+#: settings-gui/ui/pages/macro_editor.py:354
+msgid "Update"
+msgstr ""
+
+#: settings-gui/ui/pages/macro_editor.py:371
+msgid "Import Macros"
+msgstr ""
+
+#: settings-gui/ui/pages/macro_editor.py:404
+msgid ""
+"The current macro list is not empty. Imported entries will be merged. "
+"Continue?"
+msgstr ""
+
+#: settings-gui/ui/pages/macro_editor.py:426
+msgid "The macro list is empty, nothing to export."
+msgstr ""
+
+#: settings-gui/ui/pages/macro_editor.py:431
+msgid "Export Macros"
 msgstr ""
 
 #: settings-gui/ui/components.py:46 settings-gui/ui/components.py:56
@@ -669,59 +797,55 @@ msgstr ""
 msgid "[ Recording... ]"
 msgstr ""
 
-#: settings-gui/ui/main_window.py:41
+#: settings-gui/ui/main_window.py:42
 msgid "Lotus Settings"
 msgstr ""
 
-#: settings-gui/ui/main_window.py:133
+#: settings-gui/ui/main_window.py:134
 msgid "&Reset"
 msgstr ""
 
-#: settings-gui/ui/main_window.py:137
-msgid "&Import"
-msgstr ""
-
-#: settings-gui/ui/main_window.py:142
-msgid "&Export"
-msgstr ""
-
-#: settings-gui/ui/main_window.py:154
+#: settings-gui/ui/main_window.py:145
 msgid "&Apply"
 msgstr ""
 
-#: settings-gui/ui/main_window.py:159
+#: settings-gui/ui/main_window.py:150
 msgid "&OK"
 msgstr ""
 
-#: settings-gui/ui/main_window.py:169
+#: settings-gui/ui/main_window.py:160
 msgid "General"
 msgstr ""
 
-#: settings-gui/ui/main_window.py:174
+#: settings-gui/ui/main_window.py:165
 msgid "Typing"
 msgstr ""
 
-#: settings-gui/ui/main_window.py:189
+#: settings-gui/ui/main_window.py:180
 msgid "Dictionary"
 msgstr ""
 
-#: settings-gui/ui/main_window.py:199
+#: settings-gui/ui/main_window.py:190
 msgid "Appearance"
 msgstr ""
 
-#: settings-gui/ui/main_window.py:211
+#: settings-gui/ui/main_window.py:197
+msgid "Backup"
+msgstr ""
+
+#: settings-gui/ui/main_window.py:207
 msgid "About"
 msgstr ""
 
-#: settings-gui/ui/main_window.py:219
+#: settings-gui/ui/main_window.py:215
 msgid "Confirm Reset"
 msgstr ""
 
-#: settings-gui/ui/main_window.py:220
+#: settings-gui/ui/main_window.py:216
 msgid "Are you sure you want to restore all settings to their default values?"
 msgstr ""
 
-#: settings-gui/ui/main_window.py:256
+#: settings-gui/ui/main_window.py:252
 msgid "All settings applied successfully."
 msgstr ""
 

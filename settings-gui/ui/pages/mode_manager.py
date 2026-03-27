@@ -751,7 +751,7 @@ class ModeManagerPage(QWidget):
         QMessageBox.information(
             self,
             _("Import Complete"),
-            _(f"Imported {imported} rules, skipped {skipped} invalid lines."),
+            _("Imported {} rules, skipped {} invalid lines.").format(imported, skipped),
         )
 
     def do_export(self):
@@ -781,7 +781,7 @@ class ModeManagerPage(QWidget):
             QMessageBox.information(
                 self,
                 _("Export Complete"),
-                _(f"Exported {len(self.app_rules)} rules to:\n{path}"),
+                _("Exported {} rules to:\n{}").format(len(self.app_rules), path),
             )
         except Exception as e:
             QMessageBox.warning(self, _("Error"), f"{_('Cannot open file for writing:')} {e}")

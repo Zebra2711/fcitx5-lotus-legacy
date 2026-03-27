@@ -417,7 +417,7 @@ class MacroEditorPage(BaseEditorPage):
         QMessageBox.information(
             self,
             _("Import Complete"),
-            _(f"Imported {imported} entries, skipped {skipped} invalid lines."),
+            _("Imported {} entries, skipped {} invalid lines.").format(imported, skipped),
         )
 
     def do_export(self):
@@ -445,7 +445,7 @@ class MacroEditorPage(BaseEditorPage):
             QMessageBox.information(
                 self,
                 _("Export Complete"),
-                _(f"Exported {self.table.rowCount()} entries to:\n{path}"),
+                _("Exported {} entries to:\n{}").format(self.table.rowCount(), path),
             )
         except Exception as e:
             QMessageBox.warning(self, "Error", _("Cannot open file for writing: {}").format(e))

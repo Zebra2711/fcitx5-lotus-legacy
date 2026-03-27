@@ -388,7 +388,7 @@ class DictEditorPage(BaseEditorPage):
         QMessageBox.information(
             self,
             _("Import Complete"),
-            _(f"Imported {imported} words."),
+            _("Imported {} words.").format(imported),
         )
 
     def do_export(self):
@@ -413,7 +413,7 @@ class DictEditorPage(BaseEditorPage):
             QMessageBox.information(
                 self,
                 _("Export Complete"),
-                _(f"Exported {len(self.words)} words to:\n{path}"),
+                _("Exported {} words to:\n{}").format(len(self.words), path),
             )
         except (IOError, OSError, UnicodeDecodeError) as e:
             QMessageBox.warning(self, "Error", _("Cannot open file for writing: {}").format(e))
