@@ -376,6 +376,8 @@ namespace fcitx {
         // TODO: Properly fixes instead ugly WA
         state->wa_chromium_flag = false;
 
+        state->wa_flag  = false;
+        state->surrtp   = false;
         state->waitAck_ = false;
         if (*config_.fixUinputWithAck) {
             if (targetMode == LotusMode::Uinput || targetMode == LotusMode::UinputHC || targetMode == LotusMode::Smooth) {
@@ -391,6 +393,12 @@ namespace fcitx {
                             LOTUS_INFO(ackApp + " detected, waiting for ack");
                         }
                         state->wa_chromium_flag = true;
+                        break;
+                    }
+                }
+                for (const auto& _App : surrtp_app) {
+                    if (appName.find(_App) != std::string::npos) {
+                        state->surrtp = true;
                         break;
                     }
                 }
