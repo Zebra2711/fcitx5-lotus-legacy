@@ -10,7 +10,6 @@
 #include "lotus-engine.h"
 #include "lotus-candidates.h"
 #include "lotus-utils.h"
-#include "ack-apps.h"
 
 #include <cstddef>
 #include <fcitx-utils/log.h>
@@ -501,8 +500,8 @@ namespace fcitx {
         int         autofillOffset = isAutofillCertain(surrounding) ? 1 : 0;
         expected_backspaces_       = static_cast<int>(utf8::length(deletedPart)) + 1 + autofillOffset;
         // Use deleteSurroundingText for apps that support it for smooth typing
-        if (engine_->getProgramName(ic_) == "soffice" && // Lmfao, only this work :>
-            surrounding.isValid() && ic_->capabilityFlags().test(CapabilityFlag::SurroundingText) &&
+        if (surrtp // Lmfao, only this work :>
+            && surrounding.isValid() && ic_->capabilityFlags().test(CapabilityFlag::SurroundingText) &&
             (surrounding.text()).back() != '\n' // firefox and discord insert '\n' into surrounding cause bug
             && !(autofillOffset)                // TODO: Guard, remove this when bug of surrounding is fixes
         ) {
