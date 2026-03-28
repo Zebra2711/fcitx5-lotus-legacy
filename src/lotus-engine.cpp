@@ -394,7 +394,7 @@ namespace fcitx {
                         break;
                     }
                 }
-                for (const auto& _App : surrtp_app) {
+                for (const auto& _App : surrtp_apps) {
                     if (appName.find(_App) != std::string::npos) {
                         state->surrtp = true;
                         break;
