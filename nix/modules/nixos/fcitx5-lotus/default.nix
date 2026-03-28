@@ -14,6 +14,7 @@ in {
     user = mkOption {
       type = types.str;
       default = "";
+      description = "User name of the Server";
     };
   };
 
