@@ -1098,6 +1098,7 @@ namespace fcitx {
                     UniqueCPtr<char> commit(EnginePullCommit(lotusEngine_.handle()));
                     if (commit && (*commit.get() != 0))
                         ic_->commitString(commit.get());
+                    ResetEngine(lotusEngine_.handle());
                 }
                 ic_->updateUserInterface(UserInterfaceComponent::InputPanel);
                 ic_->updatePreedit();
@@ -1105,18 +1106,11 @@ namespace fcitx {
             }
             case LotusMode::Uinput:
             case LotusMode::UinputHC:
-            case LotusMode::Smooth: {
-                if (lotusEngine_) {
-                    UniqueCPtr<char> preedit(EnginePullPreedit(lotusEngine_.handle()));
-                    if (preedit && (*preedit.get() != 0)) {
-                        ic_->commitString(preedit.get());
-                    }
-                }
-                break;
-            }
+            case LotusMode::Smooth:
             case LotusMode::SurroundingText: {
-                if (lotusEngine_)
+                if (lotusEngine_) {
                     ResetEngine(lotusEngine_.handle());
+                }
                 break;
             }
             default: {

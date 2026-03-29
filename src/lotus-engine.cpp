@@ -412,6 +412,7 @@ namespace fcitx {
             ic->inputPanel().reset();
             ic->updateUserInterface(UserInterfaceComponent::InputPanel);
             auto* state = ic->propertyFor(&factory_);
+            state->commitBuffer();
             state->reset();
         }
 
@@ -528,6 +529,7 @@ namespace fcitx {
                                 ic->inputPanel().reset();
                                 ic->updateUserInterface(UserInterfaceComponent::InputPanel);
                                 auto* state = ic->propertyFor(&factory_);
+                                state->commitBuffer();
                                 state->reset();
                                 ic->commitString(charStr);
                                 return;
@@ -554,8 +556,10 @@ namespace fcitx {
                 ic->inputPanel().reset();
                 ic->updateUserInterface(UserInterfaceComponent::InputPanel);
                 auto* state = ic->propertyFor(&factory_);
-                state->reset();
+
                 if (selectedMode != LotusMode::NoMode) {
+                    state->commitBuffer();
+                    state->reset();
                     setMode(selectedMode, ic);
                     if (selectedMode == LotusMode::Emoji) {
                         state->updateEmojiPreedit();
@@ -786,6 +790,7 @@ namespace fcitx {
             ic->inputPanel().reset();
             ic->updateUserInterface(UserInterfaceComponent::InputPanel);
             auto* state = ic->propertyFor(&factory_);
+            state->commitBuffer();
             state->reset();
         };
 
