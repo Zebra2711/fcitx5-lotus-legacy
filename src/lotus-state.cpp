@@ -462,12 +462,10 @@ namespace fcitx {
             replacement_thread_id_.store(0, std::memory_order_release);
             std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
             // Validate surr cursor pos should match realtextLen after all BS applied
-            const auto& surr = ic_->surroundingText();
-            if (surr.isValid() && surr.cursor() == realtextLen.load(std::memory_order_acquire)) {
-                LOTUS_INFO("Skip retry");
-            } else {
-                // Retry x5 (1 ms each), khi can (chromium,electron,...)
-                if (waitAck_)
+            if (waitAck_) {
+                const auto& surr = ic_->surroundingText();
+                if (!surr.isValid() || surr.cursor() != realtextLen.load(std::memory_order_acquire)) {
+                    // Retry x5 (1 ms each), khi can (chromium,electron,...)
                     for (int retry = 0; retry < 5; ++retry) {
                         std::this_thread::sleep_for(std::chrono::milliseconds(1));
                         const auto& surr2 = ic_->surroundingText();
@@ -475,6 +473,7 @@ namespace fcitx {
                             break;
                         }
                     }
+                }
             }
             ic_->commitString(pending_commit_string_);
             LOTUS_INFO("Commit: " + pending_commit_string_);
