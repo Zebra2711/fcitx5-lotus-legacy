@@ -1,5 +1,5 @@
 Name:           fcitx5-lotus
-Version:        1.8.0
+Version:        1.8.1
 Release:        1
 Summary:        Vietnamese input method for fcitx5
 License:        GPL-3.0-or-later
@@ -164,7 +164,8 @@ fi
 %systemd_postun_with_restart fcitx5-lotus-server@.service
 
 %changelog
-* Sat Mar 28 2026 Nguyen Hoang Ky <nhktmdzhg@gmail.com> - 1.8.0-1
-- Add backup/restore support
-- Add dynamic macro ($TIME, $DATE)
-- Fix some bugs
+* Mon Mar 30 2026 Nguyen Hoang Ky <nhktmdzhg@gmail.com> - 1.8.1-1
+- Fix some bug in preedit mode
+- Add black icons option for Breeze icon theme
+- Fix bug duplicated character in chromium-based in wayland
+- Fix bug lag when hold a key in uinput mode
