@@ -651,20 +651,26 @@ namespace fcitx {
         std::string      commonPrefix;
         std::string      deletedPart;
         std::string      addedPart;
+
+        if (wa_chromium_flag)
+            keyEvent.filterAndAccept();
+
         if (compareAndSplitStrings(oldPreBuffer_, preeditStr, commonPrefix, deletedPart, addedPart) != 0) {
             if (deletedPart.empty()) {
                 bool isCommit           = false;
                 bool wasAutoCapitalized = (currentSym != keyEvent.rawKey().sym());
                 if (!addedPart.empty()) {
                     oldPreBuffer_ = preeditStr;
-                    if (addedPart != keyUtf8 || wasAutoCapitalized) {
+                    if (wa_chromium_flag || wasAutoCapitalized || addedPart != keyUtf8) {
                         ic_->commitString(addedPart);
                         LOTUS_INFO("Commit: " + addedPart);
-                        keyEvent.filterAndAccept();
-                        isCommit = true;
+                        if (!wa_chromium_flag) {
+                            keyEvent.filterAndAccept();
+                            isCommit = true;
+                        }
                     }
                 }
-                if (!isCommit) {
+                if (!wa_chromium_flag && !isCommit) {
                     keyEvent.forward();
                 }
             } else {
@@ -681,7 +687,8 @@ namespace fcitx {
                     is_deleting_.store(false, std::memory_order_release);
                 }
 
-                keyEvent.filterAndAccept();
+                if (!wa_chromium_flag)
+                    keyEvent.filterAndAccept();
                 performReplacement(deletedPart, addedPart);
                 oldPreBuffer_ = preeditStr;
             }
