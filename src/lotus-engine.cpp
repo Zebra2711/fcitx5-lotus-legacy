@@ -12,7 +12,7 @@
 #include "lotus-candidates.h"
 #include "lotus-monitor.h"
 #include "lotus-utils.h"
-#include "ack-apps.h"
+#include "app_quirks.h"
 #include <optional>
 #include <sys/socket.h>
 #include <utility>
@@ -411,7 +411,7 @@ namespace fcitx {
         //
         // TODO: Properly fixes instead ugly WA
         state->wa_chromium_flag = false;
-
+        const bool prevAck = state->waitAck_;
         state->waitAck_ = false;
         if (*config_.fixUinputWithAck) {
             if (targetMode == LotusMode::Uinput || targetMode == LotusMode::Smooth || targetMode == LotusMode::Minecraft) {
@@ -432,12 +432,18 @@ namespace fcitx {
                 }
             }
         }
+        // Clean block stage. (firefox bug)
+        if (prevAck != state->waitAck_ && !state->waitAck_  && uinput_client_fd_ >= 0) {
+            char drain[64];
+            recv(uinput_client_fd_, drain, sizeof(drain), MSG_DONTWAIT | MSG_NOSIGNAL);
+        }
         if (event.type() == EventType::InputContextFocusIn && is_dbus && !surrvalid) {
             LOTUS_INFO("Skip clearAllBuffers");
         } else if (surrvalid && !state->oldPreBuffer_.empty() && (now_ms() - state->lastDeactivateTime_) < 100) {
             state->clearAllBuffers();
         }
-        is_deleting_.store(false);
+        if (!state->isReplacing())
+            is_deleting_.store(false);
         needEngineReset.store(false);
         if (targetMode == LotusMode::Emoji) {
             state->updateEmojiPreedit();
@@ -649,7 +655,8 @@ namespace fcitx {
                 if (surrvalid && state->oldPreBuffer_.empty())
                     state->clearAllBuffers();
             }
-            is_deleting_.store(false);
+            if (!state->isReplacing())
+                is_deleting_.store(false);
             needEngineReset.store(false);
             ic->inputPanel().reset();
             ic->updateUserInterface(UserInterfaceComponent::InputPanel);

@@ -132,11 +132,14 @@ namespace fcitx {
                 send(uinput_client_fd_, &count, sizeof(count), MSG_NOSIGNAL);
             }
         }
-
-        if (waitAck_) {
+        // if (waitAck_)
+        {
             LOTUS_INFO("Waiting for ack");
-            std::this_thread::sleep_for(std::chrono::milliseconds(count * 5));
-        }
+            char ack;
+            recv(uinput_client_fd_, &ack, sizeof(ack), MSG_NOSIGNAL);
+            // keep safe that BS is finish by app
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        } // alway wait ack
     }
 
     bool LotusState::isAutofillCertain(const SurroundingText& s) {
@@ -444,19 +447,8 @@ namespace fcitx {
                 return false; // Allow intermediate backspaces to reach the app to clear autofill/old text.
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
-            // Validate surr cursor pos should match realtextLen after all BS applied
-            const auto& surr = ic_->surroundingText();
-            if (surr.isValid() && surr.cursor() == realtextLen.load(std::memory_order_acquire)) {
-                LOTUS_INFO("Skip retry");
-            } else {
-                // Retry x3 (2 ms each), khi can (chromium,electron,...)
-                for (int retry = 0; retry < 3; ++retry) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
-                    const auto& surr2 = ic_->surroundingText();
-                    if (surr2.isValid() && surr2.cursor() == realtextLen.load(std::memory_order_acquire)) {
-                        break;
-                    }
-                }
+            if (waitAck_) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
             }
             ic_->commitString(pending_commit_string_);
             LOTUS_INFO("Commit: " + pending_commit_string_);
@@ -466,8 +458,6 @@ namespace fcitx {
 
             event.filterAndAccept(); // Filter out the final trigger backspace.
             is_deleting_.store(false);
-            if (getFrontendName(ic_) == "dbus" && !ic_->surroundingText().isValid())
-                replayBufferedKeys(); // Does we need drop this?
             return true;
         }
         return false;
@@ -943,7 +933,7 @@ namespace fcitx {
             if (isBackspace(currentSym)) {
                 if (realtextLen.load(std::memory_order_acquire) > 0)
                     realtextLen.fetch_sub(1, std::memory_order_acq_rel);
-                if (handleUInputKeyPress(keyEvent, currentSym, (realMode == LotusMode::Smooth) ? 5 : 20)) {
+                if (handleUInputKeyPress(keyEvent, currentSym, (realMode == LotusMode::Smooth) ? 5 : 10)) { // TODO: Don't hard-code here; make it configurable
                     return;
                 }
             } else {
@@ -1211,5 +1201,8 @@ namespace fcitx {
             }
         }
         LOTUS_INFO("Replay buffered keys done");
+    }
+    bool LotusState::isReplacing() const {
+        return expected_backspaces_ > 0 && current_backspace_count_ < expected_backspaces_;
     }
 } // namespace fcitx

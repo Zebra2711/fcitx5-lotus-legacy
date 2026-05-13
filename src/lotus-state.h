@@ -211,14 +211,7 @@ namespace fcitx {
         */
         void processNormalKey(KeyEvent& keyEvent, KeySym currentSym);
 
-        /**
-         * @brief Replays keystrokes buffered during replacement.
-         *
-         * When is_deleting_ is true, non-special keystrokes are buffered
-         * instead of being discarded. This method replays them after the
-         * replacement completes.
-         */
-        void replayBufferedKeys();
+        bool isReplacing() const;
     };
 
 } // namespace fcitx
