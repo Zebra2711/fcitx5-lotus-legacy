@@ -15,7 +15,15 @@
 
 #include <algorithm>
 #include <chrono>
-
+#if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
+extern "C" size_t compare_split_avx512(
+    const char* A,
+    const char* B,
+    size_t lenA,
+    size_t lenB,
+    void* dummy
+);
+#endif
 // Global variables
 std::atomic<fcitx::LotusMode> realMode{fcitx::LotusMode::Smooth};
 std::atomic<bool>             needEngineReset{false};
@@ -65,6 +73,14 @@ bool isBackspace(uint32_t sym) {
 int compareAndSplitStrings(const std::string& A, const std::string& B, std::string& deletedPart, std::string& addedPart) {
     size_t i = 0;
     size_t j = 0;
+#if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
+    size_t maxLen = std::min(A.size(), B.size());
+    i = compare_split_avx512(A.data(), B.data(), A.size(), B.size(), nullptr);
+    // UTF-8 safe backtrack
+    while (i > 0 && ((A[i] & 0xC0) == 0x80)) {
+        i--;
+    }
+#else
     while (i < A.size() && j < B.size()) {
         unsigned int lenA = fcitx_utf8_char_len(&A[i]);
         unsigned int lenB = fcitx_utf8_char_len(&B[j]);
@@ -81,7 +97,7 @@ int compareAndSplitStrings(const std::string& A, const std::string& B, std::stri
             break;
         }
     }
-
+#endif
     deletedPart.assign(A, i);
     addedPart.assign(B, j);
     return (deletedPart.empty() && addedPart.empty()) ? 1 : 2;
