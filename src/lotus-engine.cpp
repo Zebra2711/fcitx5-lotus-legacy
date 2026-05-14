@@ -413,6 +413,7 @@ namespace fcitx {
         state->wa_chromium_flag = false;
         const bool prevAck = state->waitAck_;
         state->waitAck_ = false;
+        state->surrtp   = false;
         if (*config_.fixUinputWithAck) {
             if (targetMode == LotusMode::Uinput || targetMode == LotusMode::Smooth || targetMode == LotusMode::Minecraft) {
 #if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
@@ -439,6 +440,13 @@ namespace fcitx {
                             LOTUS_INFO(ackApp + " detected, waiting for ack");
                         }
                         state->wa_chromium_flag = true;
+                        break;
+                    }
+                }
+                for (const auto& _App : surrtp_apps) {
+                    if (contains(_App)) {
+                        LOTUS_INFO(std::string(_App) + " support surr");
+                        state->surrtp = true;
                         break;
                     }
                 }

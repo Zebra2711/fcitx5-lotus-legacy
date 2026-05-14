@@ -15,15 +15,7 @@
 
 #include <algorithm>
 #include <chrono>
-#if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
-extern "C" size_t compare_split_avx512(
-    const char* A,
-    const char* B,
-    size_t lenA,
-    size_t lenB,
-    void* dummy
-);
-#endif
+
 // Global variables
 std::atomic<fcitx::LotusMode> realMode{fcitx::LotusMode::Smooth};
 std::atomic<bool>             needEngineReset{false};

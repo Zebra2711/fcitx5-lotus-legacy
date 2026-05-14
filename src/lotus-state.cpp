@@ -35,6 +35,21 @@ namespace fcitx {
         return ucs4 == ' ' || ucs4 == '\t' || ucs4 == '\n' || ucs4 == '\r' || ucs4 == 0 || (ucs4 >= 58 && ucs4 <= 64);
     }
 
+    static inline void update_max(std::atomic<uint32_t>& value, uint32_t target) {
+        uint32_t current = value.load(std::memory_order_acquire);
+
+        asm volatile("1:\n\t"
+                     "cmpl %[target], %[current]\n\t"
+                     "jae 2f\n\t"
+                     "lock cmpxchgl %[target], %[mem]\n\t"
+                     "jne 1b\n\t"
+                     "2:\n\t"
+                     : [mem] "+m"(value), [current] "+a"(current)
+                     : [target] "r"(target)
+                     : "memory");
+    }
+
+
     LotusState::LotusState(LotusEngine* engine, InputContext* ic) : engine_(engine), ic_(ic) {
         setEngine();
     }
@@ -150,47 +165,68 @@ namespace fcitx {
         const unsigned int cursor  = s.cursor();
         const unsigned int anchor  = s.anchor();
         const auto&        text    = s.text();
-        const size_t       textLen = utf8::length(text);
+        const size_t       cursor_sz = static_cast<size_t>(cursor);
 
         // Fix that surrounding text is delay update
-        const size_t buffLen    = utf8::length(oldPreBuffer_);
+        const size_t buffLen    =
+#if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
+            utf8_length_avx512(oldPreBuffer_.data(), oldPreBuffer_.size());
+#else
+            utf8::length(oldPreBuffer_);
+#endif
         const size_t pb         = text.find(oldPreBuffer_);
-        size_t       rangeStart = static_cast<size_t>(cursor) >= buffLen ? static_cast<size_t>(cursor) - buffLen : 0;
-        const bool   sameprefix = pb != std::string::npos && pb >= rangeStart && pb <= static_cast<size_t>(cursor);
+        size_t       rangeStart = buffLen >= cursor_sz ? 0 : cursor_sz - buffLen;
+        const bool   sameprefix = pb != std::string::npos && pb >= rangeStart && pb <= cursor_sz;
 
         // Detect browser autofill/autocomplete suggestions via selection.
+        // This check for wayland_input method v2/v3 and not dbus
         if (cursor != anchor) {
+            LOTUS_INFO("check suggest wayland");
             unsigned int selectionStart = std::min(anchor, cursor);
             unsigned int selectionEnd   = std::max(anchor, cursor);
 
             // Only consider it browser autofill if the selection starts at the cursor
             // and extends to the end of the line (common address bar behavior).
-            if (selectionStart >= cursor || (selectionStart < cursor && selectionEnd > cursor)) {
+            if (cursor <= selectionEnd) {
                 if (!sameprefix)
                     return false;
                 // If the selection contains a newline, it's likely a multiline editor (AI ghost text),
                 // not a single-line URL/Search bar.
-                size_t p = text.find('\n', selectionStart);
+                size_t p =
+#if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
+                    find_char_avx512(text.data(), text.size(), selectionStart, '\n');
+#else
+                    text.find('\n', selectionStart);
+#endif
                 return p == std::string::npos || p >= static_cast<size_t>(selectionEnd);
             }
         }
 
-        if (textLen == static_cast<size_t>(cursor)) {
+        const size_t textLen =
+#if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
+            utf8_length_avx512(text.data(), text.size());
+#else
+            utf8::length(text);
+#endif
+        if (textLen == cursor_sz) {
             realtextLen.store(textLen, std::memory_order_release);
             return false;
         }
 
         // Heuristic: rapid text growth in a single-line context.
         // Applied only when no newline is present after the cursor to distinguish from AI text in editors.
-        // Gecko/Firefox: if buffLen > textLen, surrounding text is stale (async update race)
-        if (buffLen > textLen) {
-            return false;
-        }
-        if (textLen > static_cast<size_t>(cursor) + 1 && cursor == realtextLen.load(std::memory_order_acquire) && text.find('\n', cursor) == std::string::npos && sameprefix)
-            return true;
+        // Check for wayland app that use dbus as backend
+        if (textLen > cursor_sz)
+            if(cursor == realtextLen.load(std::memory_order_acquire)
+#if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
+                && find_char_avx512(text.data(), text.size(), cursor, '\n') == static_cast<size_t>(-1)
+#else
+                && text.find('\n', cursor) == std::string::npos
+#endif
+                && sameprefix)
+                return true;
 
-        for (auto v = realtextLen.load(std::memory_order_acquire); v < cursor && !realtextLen.compare_exchange_weak(v, cursor, std::memory_order_acq_rel);)
-            ;
+        update_max(realtextLen, static_cast<uint32_t>(cursor));
         return false;
     }
 
@@ -463,7 +499,7 @@ namespace fcitx {
         return false;
     }
 
-    void LotusState::performReplacement(const std::string& deletedPart, const std::string& addedPart) {
+    bool LotusState::performReplacement(const std::string& deletedPart, const std::string& addedPart) {
         LOTUS_INFO("Perform replacement: " + deletedPart + " -> " + addedPart); //NOLINT
         current_backspace_count_ = 0;
         pending_commit_string_   = addedPart;
@@ -473,13 +509,60 @@ namespace fcitx {
         // The isAutofillCertain function has been optimized to differentiate
         // between browser autofill and AI ghost text.
         int autofillOffset   = isAutofillCertain(surrounding) ? 1 : 0;
-        expected_backspaces_ = static_cast<int>(utf8::length(deletedPart)) + 1 + autofillOffset;
+        expected_backspaces_       = static_cast<int>(
+#if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
+            utf8_length_avx512(deletedPart.data(), deletedPart.size())
+#else
+            utf8::length(deletedPart)
+#endif
+        ) + 1 + autofillOffset;
         if (realMode == LotusMode::Minecraft) {
             --expected_backspaces_;
         }
-        is_deleting_.store(true, std::memory_order_release);
-        send_backspace_uinput(expected_backspaces_);
-        LOTUS_INFO("Send " + std::to_string(expected_backspaces_) + " backspaces");
+        if (surrtp // Lmfao, only this work :>
+            && (surrounding.isValid() && ic_->capabilityFlags().test(CapabilityFlag::SurroundingText))
+              && (!surrounding.text().empty() && surrounding.text().back() != '\n' // firefox and discord insert '\n' into surr cause bug
+                && !autofillOffset)                                                // TODO: Guard, remove this when bug of surrounding is fixes
+        ) {
+            LOTUS_INFO("deleteSurroundingText branch");
+            auto      cur     = static_cast<size_t>(surrounding.cursor());
+            const int bsCount = static_cast<int>(
+#if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
+                  utf8_length_avx512(deletedPart.data(), deletedPart.size())
+#else
+                  utf8::length(deletedPart)
+#endif
+            );/*
+            if (autofillOffset) {
+                LOTUS_INFO("have suggestions branch");
+                const auto surr = surrounding.text();
+                int surrLen       = static_cast<int>(
+#if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
+                  utf8_length_avx512(surr.data(), surr.size())
+#else
+                  utf8::length(surr)
+#endif
+                );
+                int realLen       = static_cast<int>(cur);
+                int suggestionLen = surrLen - realLen;
+                // delete suggestion tail
+                if (suggestionLen > 0)
+                    ic_->deleteSurroundingText(0, 1);
+            }*/
+            // delete addedPart
+            if (bsCount > 0)
+                ic_->deleteSurroundingText(-bsCount, static_cast<unsigned int>(bsCount));
+            ic_->commitString(addedPart);
+            //clearAllBuffers();
+            return true;
+        } else {
+            is_deleting_.store(true, std::memory_order_release);
+            send_backspace_uinput(expected_backspaces_);
+            LOTUS_INFO("Send " + std::to_string(expected_backspaces_ - 1 - autofillOffset) + " backspaces + 1 trigger");
+            if (autofillOffset)
+                LOTUS_INFO("Send more 1 extra delete suggestions");
+        }
+        return false;
     }
 
     bool LotusState::checkForwardSpecialKey(KeyEvent& keyEvent, KeySym& currentSym) {
