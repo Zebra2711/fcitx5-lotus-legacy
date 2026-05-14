@@ -856,8 +856,12 @@ namespace fcitx {
             }
 
             if (!deletedPart.empty() || !addedPart.empty()) {
-                size_t charsToDelete = utf8::length(deletedPart);
-
+                size_t charsToDelete =
+#if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
+            utf8_length_avx512(deletedPart.data(), deletedPart.size());
+#else
+            utf8::length(deletedPart);
+#endif
                 if (charsToDelete > 0) {
                     ic->deleteSurroundingText(-static_cast<int>(charsToDelete), static_cast<int>(charsToDelete));
                 }
@@ -1088,7 +1092,12 @@ namespace fcitx {
     void LotusState::reset(bool isFocusOut) {
         const auto& surrounding = ic_->surroundingText();
         const auto& text        = surrounding.text();
-        size_t      textLen     = utf8::length(text);
+        const size_t textLen =
+#if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
+            utf8_length_avx512(text.data(), text.size());
+#else
+            utf8::length(text);
+#endif
         realtextLen.store(textLen, std::memory_order_release);
         if (is_deleting_.load(std::memory_order_acquire)) {
             return;
