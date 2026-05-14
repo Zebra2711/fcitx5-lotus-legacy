@@ -437,7 +437,7 @@ namespace fcitx {
                     if (contains(ackApp)) {
                         if (is_dbus) {
                             state->waitAck_ = true;
-                            LOTUS_INFO(ackApp + " detected, waiting for ack");
+                            LOTUS_INFO(std::string(ackApp) + " detected, waiting for ack");
                         }
                         state->wa_chromium_flag = true;
                         break;
