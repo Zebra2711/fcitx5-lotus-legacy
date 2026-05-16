@@ -207,7 +207,7 @@ if (!alreadySetup) {
         bool prevAck = state->waitAck_;
         state->waitAck_ = false;
         if (*config_.fixUinputWithAck) {
-            if (targetMode == LotusMode::Uinput || targetMode == LotusMode::UinputWine || targetMode == LotusMode::Smooth) {
+            if (targetMode == LotusMode::Uinput || targetMode == LotusMode::Minecraft || targetMode == LotusMode::Smooth) {
 #if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
                 tolower_avx512(appName.data(), appName.size());
 #elif __cplusplus >= 202002L
@@ -321,7 +321,7 @@ if (!alreadySetup) {
                 }
                 case FcitxKey_1: selectedMode = LotusMode::Smooth; break;
                 case FcitxKey_2: selectedMode = LotusMode::Uinput; break;
-                case FcitxKey_3: selectedMode = LotusMode::UinputWine; break;
+                case FcitxKey_3: selectedMode = LotusMode::Minecraft; break;
                 case FcitxKey_4: selectedMode = LotusMode::SurroundingText; break;
                 case FcitxKey_q: selectedMode = LotusMode::Preedit; break;
                 case FcitxKey_w: selectedMode = LotusMode::Emoji; break;
@@ -579,7 +579,7 @@ if (!alreadySetup) {
         candidateList->append(std::make_unique<DisplayOnlyCandidateWord>(Text(_("App: ") + currentConfigureApp_)));
         candidateList->append(std::make_unique<AppModeCandidateWord>(getLabel(LotusMode::Smooth, _("[1] Uinput (Smooth)")), applyMode(LotusMode::Smooth)));
         candidateList->append(std::make_unique<AppModeCandidateWord>(getLabel(LotusMode::Uinput, _("[2] Uinput (Slow)")), applyMode(LotusMode::Uinput)));
-        candidateList->append(std::make_unique<AppModeCandidateWord>(getLabel(LotusMode::UinputWine, _("[3] Uinput (Wine)")), applyMode(LotusMode::UinputWine)));
+        candidateList->append(std::make_unique<AppModeCandidateWord>(getLabel(LotusMode::Minecraft, _("[3] Uinput (Minecraft)")), applyMode(LotusMode::Minecraft)));
         candidateList->append(std::make_unique<AppModeCandidateWord>(getLabel(LotusMode::SurroundingText, _("[4] Surrounding Text")), applyMode(LotusMode::SurroundingText)));
         candidateList->append(std::make_unique<AppModeCandidateWord>(getLabel(LotusMode::Preedit, _("[q] Preedit")), applyMode(LotusMode::Preedit)));
         candidateList->append(std::make_unique<AppModeCandidateWord>(getLabel(LotusMode::Emoji, _("[w] Emoji Picker")), applyMode(LotusMode::Emoji)));
@@ -605,7 +605,7 @@ if (!alreadySetup) {
         switch (realMode) {
             case LotusMode::Smooth: selectedIndex = 1; break;
             case LotusMode::Uinput: selectedIndex = 2; break;
-            case LotusMode::UinputWine: selectedIndex = 3; break;
+            case LotusMode::Minecraft: selectedIndex = 3; break;
             case LotusMode::SurroundingText: selectedIndex = 4; break;
             case LotusMode::Preedit: selectedIndex = 5; break;
             case LotusMode::Emoji: selectedIndex = 6; break;

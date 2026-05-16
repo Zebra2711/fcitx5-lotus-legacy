@@ -29,7 +29,7 @@ namespace fcitx {
         Off             = 0,
         Smooth          = 1,
         Uinput          = 2,
-        UinputWine      = 3,
+        Minecraft       = 3,
         SurroundingText = 4,
         Preedit         = 5,
         Emoji           = 6,
@@ -47,7 +47,7 @@ namespace fcitx {
             case LotusMode::Uinput: return "Uinput (Slow)";
             case LotusMode::SurroundingText: return "Surrounding Text";
             case LotusMode::Preedit: return "Preedit";
-            case LotusMode::UinputWine: return "Uinput (Wine)";
+            case LotusMode::Minecraft: return "Uinput (Minecraft)";
             case LotusMode::Emoji: return "Emoji Picker";
             case LotusMode::Smooth: return "Uinput (Smooth)";
             default: return "";
@@ -65,7 +65,7 @@ namespace fcitx {
             {"Uinput (Slow)", LotusMode::Uinput},
             {"Surrounding Text", LotusMode::SurroundingText},
             {"Preedit", LotusMode::Preedit},
-            {"Uinput (Wine)", LotusMode::UinputWine},
+            {"Uinput (Minecraft)", LotusMode::Minecraft},
             {"Emoji Picker", LotusMode::Emoji},
             {"Uinput (Smooth)", LotusMode::Smooth},
         };
@@ -222,10 +222,10 @@ namespace fcitx {
         Option<bool> autoCapitalizeAfterPunctuation{this, "AutoCapitalizeAfterPunctuation", _("Auto capitalize after sentence-ending punctuation (. ! ? Enter) (experimental)"),
                                                     false};
         Option<bool> doubleSpaceToPeriod{this, "DoubleSpaceToPeriod", _("Double Space to Period (experimental)"), false};
-        Option<bool> w2u{this, "W2U", _("Type w to Produce ư"), true}; Option<bool> autoNonVnRestore{this, "AutoNonVnRestore", _("Auto Restore Keys With Invalid Words"), true};
+        Option<bool> w2u{this, "W2U", _("Type w to Produce ư"), true};
+        Option<bool> autoNonVnRestore{this, "AutoNonVnRestore", _("Auto Restore Keys With Invalid Words"), true};
         Option<bool>                                                                modernStyle{this, "ModernStyle", _("Use oà, uý (Instead Of òa, úy)"), true};
         Option<bool>                                                                freeMarking{this, "FreeMarking", _("Allow Type With More Freedom"), true};
-        Option<bool>                                            ddFreeStyle{this, "DdFreeStyle", _("Allow dd To Produce đ When Auto Restore Keys With Invalid Words Is On"), true};
         Option<bool>                                            fixUinputWithAck{this, "FixUinputWithAck", _("Fix Uinput Mode With Ack"), false};
         Option<bool>                                            useLotusIcons{this, "UseLotusIcons", _("Use Lotus Status Icons"), false};
         Option<bool>                                            useBlackDefaultIcons{this, "UseBlackDefaultIcons", _("Use Black Default Icons"), false};

@@ -418,7 +418,7 @@ namespace fcitx {
             utf8::length(deletedPart)
 #endif
         ) + 1 + autofillOffset;
-        if (realMode == LotusMode::UinputWine) expected_backspaces_-=1;
+        if (realMode == LotusMode::Minecraft) expected_backspaces_-=1;
         // Use deleteSurroundingText for apps that support it for smooth typing
         LOTUS_INFO("surr: \""+surrounding.text()+"\"");
         if (surrtp) LOTUS_INFO("surrtp");
@@ -783,7 +783,7 @@ namespace fcitx {
             } else isPrevSpace_ = false;
         }
         switch (realMode) {
-            case LotusMode::Uinput: case LotusMode::Smooth: case LotusMode::UinputWine: handleUinputMode(keyEvent, currentSym); break;
+            case LotusMode::Uinput: case LotusMode::Smooth: case LotusMode::Minecraft: handleUinputMode(keyEvent, currentSym); break;
             case LotusMode::SurroundingText: handleSurroundingText(keyEvent, currentSym); break;
             case LotusMode::Preedit:         handlePreeditMode(keyEvent, currentSym); break;
             case LotusMode::Emoji:           handleEmojiMode(keyEvent); break;
