@@ -17,16 +17,11 @@ BuildRequires:  systemd-rpm-macros
 BuildRequires:  pkgconfig(libudev)
 BuildRequires:  libX11-devel
 
-BuildRequires:  golang
-BuildRequires:  python3
 BuildRequires:  libgudev-devel
 
 %{?systemd_requires}
 Requires:       fcitx5-data
 Requires:       fcitx5
-Requires:       python3-QtPy
-Requires:       (python3-pyqt6 or python3-pyside6)
-Requires:       python3-dbus
 Requires:       hicolor-icon-theme
 
 %description
@@ -65,8 +60,8 @@ Vietnamese input method for fcitx5
 %dir %{_datadir}/fcitx5/lotus
 %{_datadir}/fcitx5/lotus/vietnamese.cm.dict
 
-%{_datadir}/fcitx5-lotus/settings-gui/
-%{_datadir}/applications/org.fcitx.Fcitx5.Addon.Lotus.Settings.desktop
+#%{_datadir}/fcitx5-lotus/settings-gui/
+#%{_datadir}/applications/org.fcitx.Fcitx5.Addon.Lotus.Settings.desktop
 
 %{_datadir}/icons/hicolor/scalable/apps/fcitx-lotus.svg
 %{_datadir}/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx-lotus.svg
