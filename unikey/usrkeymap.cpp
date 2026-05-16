@@ -8,13 +8,55 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <fcitx-utils/fdstreambuf.h>
 #include <fcitx-utils/log.h>
 #include <fcitx-utils/misc.h>
 #include <fcitx-utils/stringutils.h>
 #include <istream>
 #include <string>
 #include <vector>
+
+#if __has_include(<fcitx-utils/fdstreambuf.h>)
+#include <fcitx-utils/fdstreambuf.h>
+#else
+#include <unistd.h>
+#include <streambuf>
+#include <ios>
+#include <cstddef>
+namespace fcitx {
+class IFDStreamBuf : public std::streambuf {
+public:
+    explicit IFDStreamBuf(int fd) : fd_(fd) {}
+protected:
+    using int_type = std::streambuf::int_type;
+    int_type underflow() override {
+        if (gptr() < egptr())
+            return traits_type::to_int_type(*gptr());
+        ssize_t n = ::read(fd_, buffer_, sizeof(buffer_));
+        if (n <= 0)
+            return traits_type::eof();
+        setg(buffer_, buffer_, buffer_ + n);
+        return traits_type::to_int_type(*gptr());
+    }
+private:
+    int fd_;
+    char buffer_[8192];
+};
+} // namespace fcitx
+
+#include <string_view>
+#include <cctype>
+namespace fcitx::stringutils {
+// fallback for old fcitx (< 5.0.16)
+inline std::string_view trimView(std::string_view sv) {
+    while (!sv.empty() && std::isspace(static_cast<unsigned char>(sv.front())))
+        sv.remove_prefix(1);
+    while (!sv.empty() && std::isspace(static_cast<unsigned char>(sv.back())))
+        sv.remove_suffix(1);
+    return sv;
+}
+} // namespace fcitx::stringutils
+#endif
+
 
 namespace {
 
