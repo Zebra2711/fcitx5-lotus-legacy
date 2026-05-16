@@ -44,7 +44,7 @@ Vietnamese input method for fcitx5
 %license %{_datadir}/licenses/%{name}/GPL-3.0-or-later.txt
 %license %{_datadir}/licenses/%{name}/LGPL-2.1-or-later.txt
 %{_bindir}/fcitx5-lotus-server
-%{_bindir}/fcitx5-lotus-settings
+#%{_bindir}/fcitx5-lotus-settings
 
 %dir %{_libdir}/fcitx5
 %{_libdir}/fcitx5/liblotus.so
