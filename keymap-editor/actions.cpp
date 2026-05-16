@@ -31,20 +31,20 @@ const std::vector<std::tuple<std::string, int, int>> &actionNames() {
             {N_("Stroke: D becomes -D"), vneDd, AC_ChrComp},
             {N_("Horn-Breve: U, O, A, become U+, O+, A(, or create U+"),
              vne_telex_w, AC_ChrComp},
-            {N_("D with stroke [-D]"), vneCount + vnl_DD, AC_Viet},
-            {N_("d with stroke [-d]"), vneCount + vnl_dd, AC_Viet},
-            {N_("A with circumflex [A^]"), vneCount + vnl_Ar, AC_Viet},
-            {N_("a with circumflex [a^]"), vneCount + vnl_ar, AC_Viet},
-            {N_("A with breve [A(]"), vneCount + vnl_Ab, AC_Viet},
-            {N_("a with breve [a(]"), vneCount + vnl_ab, AC_Viet},
-            {N_("E with circumflex [E^]"), vneCount + vnl_Er, AC_Viet},
-            {N_("e with circumflex [e^]"), vneCount + vnl_er, AC_Viet},
-            {N_("O with circumflex [O^]"), vneCount + vnl_Or, AC_Viet},
-            {N_("o with circumflex [o^]"), vneCount + vnl_or, AC_Viet},
-            {N_("O with horn [O+]"), vneCount + vnl_Oh, AC_Viet},
-            {N_("o with horn [o+]"), vneCount + vnl_oh, AC_Viet},
-            {N_("U with horn [U+]"), vneCount + vnl_Uh, AC_Viet},
-            {N_("u with horn [u+]"), vneCount + vnl_uh, AC_Viet}};
+            {N_("D with stroke [-D]"), lexi(vnl_DD), AC_Viet},
+            {N_("d with stroke [-d]"), lexi(vnl_dd), AC_Viet},
+            {N_("A with circumflex [A^]"), lexi(vnl_Ar), AC_Viet},
+            {N_("a with circumflex [a^]"), lexi(vnl_ar), AC_Viet},
+            {N_("A with breve [A(]"), lexi(vnl_Ab), AC_Viet},
+            {N_("a with breve [a(]"), lexi(vnl_ab), AC_Viet},
+            {N_("E with circumflex [E^]"), lexi(vnl_Er), AC_Viet},
+            {N_("e with circumflex [e^]"), lexi(vnl_er), AC_Viet},
+            {N_("O with circumflex [O^]"), lexi(vnl_Or), AC_Viet},
+            {N_("o with circumflex [o^]"), lexi(vnl_or), AC_Viet},
+            {N_("O with horn [O+]"), lexi(vnl_Oh), AC_Viet},
+            {N_("o with horn [o+]"), lexi(vnl_oh), AC_Viet},
+            {N_("U with horn [U+]"), lexi(vnl_Uh), AC_Viet},
+            {N_("u with horn [u+]"), lexi(vnl_uh), AC_Viet}};
         result.reserve(FCITX_ARRAY_SIZE(UkEvNameList));
         for (const auto &item : UkEvNameList) {
             result.push_back(item);
@@ -93,20 +93,20 @@ int actionCategory(int action) {
     case vneDd:
     case vne_telex_w:
         return AC_ChrComp;
-    case vneCount + vnl_DD:
-    case vneCount + vnl_dd:
-    case vneCount + vnl_Ar:
-    case vneCount + vnl_ar:
-    case vneCount + vnl_Ab:
-    case vneCount + vnl_ab:
-    case vneCount + vnl_Er:
-    case vneCount + vnl_er:
-    case vneCount + vnl_Or:
-    case vneCount + vnl_or:
-    case vneCount + vnl_Oh:
-    case vneCount + vnl_oh:
-    case vneCount + vnl_Uh:
-    case vneCount + vnl_uh:
+    case lexi(vnl_DD):
+    case lexi(vnl_dd):
+    case lexi(vnl_Ar):
+    case lexi(vnl_ar):
+    case lexi(vnl_Ab):
+    case lexi(vnl_ab):
+    case lexi(vnl_Er):
+    case lexi(vnl_er):
+    case lexi(vnl_Or):
+    case lexi(vnl_or):
+    case lexi(vnl_Oh):
+    case lexi(vnl_oh):
+    case lexi(vnl_Uh):
+    case lexi(vnl_uh):
         return AC_Viet;
     }
     return -1;
