@@ -18,7 +18,7 @@ include(FeatureSummary)
 include(GNUInstallDirs)
 include(ECMUninstallTarget)
 
-option(ENABLE_QT "Enable Qt based GUI" On)
+option(ENABLE_QT "Enable Qt based GUI" Off)
 
 find_package(Fcitx5Core ${REQUIRED_FCITX_VERSION} REQUIRED)
 find_package(Fcitx5ModuleEmoji REQUIRED)
