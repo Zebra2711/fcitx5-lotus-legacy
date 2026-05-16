@@ -13,28 +13,22 @@ jobs:
         include:
           - distro: debian:12
             codename: bookworm
-            enable_qt: 'OFF'
           - distro: debian:13
             codename: trixie
-            enable_qt: 'ON'
           - distro: debian:testing
             codename: testing
-            enable_qt: 'ON'
           - distro: debian:unstable
             codename: sid
-            enable_qt: 'ON'
           - distro: ubuntu:22.04
             codename: jammy
-            enable_qt: 'OFF'
           - distro: ubuntu:24.04
             codename: noble
-            enable_qt: 'OFF'
           - distro: ubuntu:25.04
             codename: plucky
-            enable_qt: 'ON'
           - distro: ubuntu:25.10
             codename: questing
-            enable_qt: 'ON'
+          - distro: ubuntu:26.04
+            codename: resolute
 
     runs-on: ubuntu-latest
 
@@ -48,8 +42,6 @@ jobs:
 
       - name: Build DEB
         uses: jtdor/build-deb-action@v1
-        env:
-          DEB_BUILD_PROFILES: ${{ matrix.enable_qt == 'OFF' && 'noqut' || '' }}
         with:
           docker-image: ${{ matrix.distro }}
           buildpackage-opts: --build=binary --no-sign
@@ -71,6 +63,8 @@ jobs:
             releasever: 42
           - distro: fedora:43
             releasever: 43
+          - distro: fedora:44
+            releasever: 44
           - distro: fedora:rawhide
             releasever: rawhide
 
@@ -191,6 +185,9 @@ jobs:
               -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" \
               -DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS" \
               -DCMAKE_MODULE_LINKER_FLAGS="$LDFLAGS" \
+              -DINSTALL_OPENRC=ON \
+              -DINSTALL_RUNIT=ON \
+              -DRUNIT_SV_DIR=/etc/runit/sv \
               -B build .
             cmake --build build
             DESTDIR=/work/arch-dist cmake --install build

@@ -97,6 +97,15 @@ body:
     validations:
       required: false
 
+  - type: input
+    id: input_type
+    attributes:
+      label: Kiểu gõ
+      description: Bạn đang sử dụng kiểu gõ nào?
+      placeholder: Ví dụ Telex, VNI, VIQR, .....
+    validations:
+      required: true
+
   - type: textarea
     id: diagnose
     attributes:

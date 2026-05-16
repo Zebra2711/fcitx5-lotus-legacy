@@ -1,7 +1,7 @@
-fcitx5-lotus (1.8.0-1) unstable; urgency=medium
+fcitx5-lotus (3.1.0-1) unstable; urgency=medium
 
-  * Add backup/restore support
-  * Add dynamic macro ($TIME, $DATE)
-  * Fix some bugs
+  * Add option to type em-dash from double hyphen
+  * Add bracket transform option
+  * Fix some bug
 
- -- Nguyen Hoang Ky <nhktmdzhg@gmail.com>  Sat, 29 Mar 2026 00:03:00 +0700
+ -- Nguyen Hoang Ky <nhktmdzhg@gmail.com>  Sun, 14 May 2026 16:15:00 +0700

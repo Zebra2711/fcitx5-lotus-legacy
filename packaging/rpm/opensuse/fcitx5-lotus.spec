@@ -1,5 +1,5 @@
 Name:           fcitx5-lotus
-Version:        1.8.0
+Version:        3.1.0
 Release:        1
 Summary:        Vietnamese input method for fcitx5
 License:        GPL-3.0-or-later
@@ -23,7 +23,8 @@ BuildRequires:  sysuser-tools
 
 %{?systemd_requires}
 Requires:       fcitx5
-Requires:       python3-pyside6
+Requires:       python3-QtPy
+Requires:       (python3-PyQt6 or python3-pyside6)
 Requires:       python3-dbus-python
 Requires:       hicolor-icon-theme
 
@@ -34,7 +35,7 @@ Vietnamese input method for fcitx5
 %setup -q
 
 %build
-%cmake -DINSTALL_OPENRC=OFF
+%cmake
 %cmake_build
 %sysusers_generate_pre %{_prefix}/lib/sysusers.d/lotus.conf lotus
 
@@ -167,7 +168,7 @@ fi
 %systemd_postun_with_restart fcitx5-lotus-server@.service
 
 %changelog
-* Sat Mar 28 2026 Nguyen Hoang Ky <nhktmdzhg@gmail.com> - 1.8.0-1
-- Add backup/restore support
-- Add dynamic macro ($TIME, $DATE)
-- Fix some bugs
+* Sun May 14 2026 Nguyen Hoang Ky <nhktmdzhg@gmail.com> - 3.1.0-1
+- Add option to type em-dash from double hyphen
+- Add bracket transform option
+- Fix some bug
