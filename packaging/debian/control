@@ -6,10 +6,10 @@ Build-Depends: debhelper (>= 13),
                cmake,
                g++,
                extra-cmake-modules,
-               fcitx5-modules-dev,
-               libfcitx5core-dev,
-               libfcitx5config-dev,
-               libfcitx5utils-dev,
+               fcitx5-modules-dev (>= 5.1.13),
+               libfcitx5core-dev (>= 5.1.13),
+               libfcitx5config-dev (>= 5.1.13),
+               libfcitx5utils-dev (>= 5.1.13),
                libinput-dev,
                libudev-dev,
                pkg-config,
@@ -18,5 +18,5 @@ Standards-Version: 4.6.0
 
 Package: fcitx5-lotus
 Architecture: any
-Depends: fcitx5, fcitx5-data, udev, hicolor-icon-theme, ${misc:Depends}, ${shlibs:Depends}
+Depends: fcitx5 (>= 5.1.13), fcitx5-data, udev, hicolor-icon-theme, ${misc:Depends}, ${shlibs:Depends}
 Description: Vietnamese input method for fcitx5
