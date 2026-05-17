@@ -23,11 +23,7 @@
 #include <Qt>
 #include <fcitx-utils/fs.h>
 #include <fcitx-utils/i18n.h>
-#if LOTUS_USE_MODERN_FCITX_API
-#include <fcitx-utils/standardpaths.h>
-#else
-#include <fcitx-utils/standardpath.h>
-#endif
+#include <fcitx-config/iniparser.h>
 #include <fcitxqtconfiguiwidget.h>
 #include <memory>
 

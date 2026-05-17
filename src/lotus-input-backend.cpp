@@ -20,6 +20,7 @@
 #include <fcitx-utils/standardpaths.h>
 #else
 #include <fcitx-utils/standardpath.h>
+#include <fcntl.h>
 #endif
 #include <fcitx-utils/utf8.h>
 #include <unordered_set>
@@ -29,7 +30,11 @@ namespace fcitx {
             static const std::unordered_set<unsigned char> WordBreakSyms = {
                 ',', ';', ':', '.', '\"', '\'', '!', '?', ' ',
             };
+#if __cpp_lib_generic_unordered_lookup >= 201811L || __cplusplus >= 202002L
             return WordBreakSyms.contains(c);
+#else
+            return WordBreakSyms.count(c) > 0;
+#endif
         }
         static UkInputMethod mapLotusIm(const std::string& name) {
             if (name.find("Telex 2") != std::string::npos && name.find("VNI") == std::string::npos)

@@ -21,11 +21,7 @@
 #include <fcitx-utils/charutils.h>
 #include <fcitx-utils/fs.h>
 #include <fcitx-utils/i18n.h>
-#if LOTUS_USE_MODERN_FCITX_API
-#include <fcitx-utils/standardpaths.h>
-#else
-#include <fcitx-utils/standardpath.h>
-#endif
+#include <fcitx-config/iniparser.h>
 #include <fcitx-utils/unixfd.h>
 #include <fcntl.h>
 #include <iterator>
@@ -180,7 +176,7 @@ void KeymapModel::load() {
 #if LOTUS_USE_MODERN_FCITX_API
     auto keymapFile = StandardPaths::global().open(StandardPathsType::PkgConfig, "lotus/keymap.txt");
 #else
-    auto keymapFile = StandardPath::global().open(StandardPath::Type::PkgConfig, "lotus/keymap.txt", O_RDONLY);
+    auto keymapFile = StandardPath::global().open(StandardPath::Type::PkgConfig, "lotus/keymap.txt");
 #endif
     if (keymapFile.isValid()) {
         list_ = UkLoadKeyOrderMap(keymapFile.fd());
