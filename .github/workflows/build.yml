@@ -13,12 +13,14 @@ jobs:
     runs-on: ubuntu-latest
     container: archlinux:latest
     steps:
-      - name: Install dependencies
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install clang-format
         run: |
-          pacman -Syu --noconfirm git clang diffutils
-          git config --global --add safe.directory $GITHUB_WORKSPACE
-      - uses: actions/checkout@v6
-      - uses: fcitx/github-actions@clang-format
+          pacman --noconfirm --noprogressbar -Syyu
+          pacman --noconfirm --noprogressbar -Sy clang
+      - name: clang-format check
+        run: .github/workflows/clang-format-check.sh "." "llvm" "^subprojects$" ""
   check:
     name: Build and test
     needs: clang-format
@@ -40,7 +42,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          pacman -Syu --noconfirm base-devel clang cmake ninja extra-cmake-modules fmt libuv boost git go libinput systemd-libs extra-cmake-modules libx11 python
+          pacman -Syu --noconfirm base-devel clang cmake ninja extra-cmake-modules fmt libuv boost git libinput systemd-libs extra-cmake-modules libx11 python
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config --global --add safe.directory "$GITHUB_WORKSPACE/fcitx5-lotus"
           git config --global --add safe.directory "$GITHUB_WORKSPACE/fcitx5"

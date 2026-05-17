@@ -176,7 +176,7 @@ void KeymapModel::load() {
 #if LOTUS_USE_MODERN_FCITX_API
     auto keymapFile = StandardPaths::global().open(StandardPathsType::PkgConfig, "lotus/keymap.txt");
 #else
-    auto keymapFile = StandardPath::global().open(StandardPath::Type::PkgConfig, "lotus/keymap.txt");
+    auto keymapFile = StandardPath::global().open(StandardPath::Type::PkgConfig, "lotus/keymap.txt", O_RDONLY);
 #endif
     if (keymapFile.isValid()) {
         list_ = UkLoadKeyOrderMap(keymapFile.fd());

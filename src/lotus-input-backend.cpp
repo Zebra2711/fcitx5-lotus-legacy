@@ -47,10 +47,10 @@ namespace fcitx {
                 return UkMsVi;
             if (name.find("User") != std::string::npos || name.find("Custom") != std::string::npos)
                 return UkUsrIM;
-            if (name.find("Telex") != std::string::npos)
-                return UkSimpleTelex;
             if (name.find("Telex + VNI") != std::string::npos)
                 return UkTelex;
+            if (name.find("Telex") != std::string::npos)
+                return UkSimpleTelex;
             return UkSimpleTelex;
         }
         class LotusUnikeyInputBackend final : public LotusInputBackend {

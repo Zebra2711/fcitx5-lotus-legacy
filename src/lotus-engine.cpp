@@ -28,7 +28,6 @@
 namespace fcitx {
     constexpr const char* CharsetActionPrefix = "lotus-charset-";
     const std::string     CustomKeymapFile    = "conf/lotus-custom-keymap.conf";
-    const std::string     MacroTableFile      = "conf/lotus-macro-table.conf";
     class AppActivationCache {
       public:
           bool needsSetup(InputContext* ic, LotusMode mode) {
