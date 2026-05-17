@@ -432,8 +432,8 @@ namespace fcitx {
         const bool B = surrounding.isValid()
                 && ic_->capabilityFlags().test(CapabilityFlag::SurroundingText);
        // blocker: some shjt edge case
-        const bool C = surrounding.text().back() != '\n' // firefox and discord insert '\n' into surr cause bug
-                && !surrounding.text().empty()
+        const bool C = !surrounding.text().empty()
+                && surrounding.text().back() != '\n' // firefox and discord insert '\n' into surr cause bug
                 && !autofillOffset; // TODO: Guard, remove this when bug of surrounding is fixes
 
         if ( A && B && C) {
