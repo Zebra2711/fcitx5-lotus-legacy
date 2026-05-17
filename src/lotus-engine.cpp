@@ -223,7 +223,7 @@ if (!alreadySetup) {
                 for (const auto& cfg : app_delay_configs) {
                     if (contains(cfg.name)) {
                         state->wa_ff = cfg.commit_delay_ms;
-                        LOTUS_INFO(std::to_string(delay_ff) + "(ms/BS) delay");
+                        LOTUS_INFO(std::to_string(state->wa_ff) + "(ms/BS) delay");
                         break;
                     }
                 }
@@ -271,8 +271,8 @@ if (!alreadySetup) {
             if (realMode == LotusMode::Preedit || realMode == LotusMode::SurroundingText) {
                 LOTUS_INFO("inputPanel reset");
                 ic->inputPanel().reset();
-                ic->updateUserInterface(UserInterfaceComponent::InputPanel);
                 ic->updatePreedit();
+                ic->updateUserInterface(UserInterfaceComponent::InputPanel);
             }
         }
         for (const auto& action : toggleActions_) {
@@ -431,8 +431,8 @@ if (!alreadySetup) {
             if (event.type() != EventType::InputContextFocusOut) {
                 if (realMode == LotusMode::Preedit || realMode == LotusMode::SurroundingText || realMode == LotusMode::Emoji) {
                     ic->inputPanel().reset();
-                    ic->updateUserInterface(UserInterfaceComponent::InputPanel);
                     ic->updatePreedit();
+                    ic->updateUserInterface(UserInterfaceComponent::InputPanel);
                 }
             }
         }

@@ -426,11 +426,17 @@ namespace fcitx {
         // Use deleteSurroundingText for apps that support it for smooth typing
         LOTUS_INFO("surr: \""+surrounding.text()+"\"");
         if (surrtp) LOTUS_INFO("surrtp");
-        if ((false || surrtp) // Lmfao, only this work :>
-            && (surrounding.isValid() && ic_->capabilityFlags().test(CapabilityFlag::SurroundingText))
-              && (!surrounding.text().empty() && surrounding.text().back() != '\n' // firefox and discord insert '\n' into surr cause bug
-                && !autofillOffset)                                                // TODO: Guard, remove this when bug of surrounding is fixes
-        ) {
+        // điều kiện cần (blocker)
+        const bool A = surrtp; // Lmfao, only this work :>
+        // đk đủ
+        const bool B = surrounding.isValid()
+                && ic_->capabilityFlags().test(CapabilityFlag::SurroundingText);
+       // blocker: some shjt edge case
+        const bool C = surrounding.text().back() != '\n' // firefox and discord insert '\n' into surr cause bug
+                && !surrounding.text().empty()
+                && !autofillOffset; // TODO: Guard, remove this when bug of surrounding is fixes
+
+        if ( A && B && C) {
             LOTUS_INFO("deleteSurroundingText branch");
             const int bsCount = static_cast<int>(
 #if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
@@ -463,7 +469,20 @@ namespace fcitx {
                 send_backspace_forward(expected_backspaces_ - 1);
                 LOTUS_INFO("Send " + std::to_string(expected_backspaces_ - 1) +"BS (NO UINPUT)");
                 ic_->commitString(addedPart);
+                expected_backspaces_ = 0;
                 return true;
+            }
+            // bushjt app/web that do shjt thing with surroundingText support
+            // cause focus out and invalid surr some edge case
+            // set fallback to Preedit in this case
+            if (A && !B) {
+              ;
+              //send_backspace_forward(expected_backspaces_ - 1);
+              //ic_->inputPanel().setClientPreedit(Text(addedPart));
+              //ic_->inputPanel().reset();
+              //ic_->updatePreedit();
+              //ic_->updateUserInterface(UserInterfaceComponent::InputPanel);
+              //return true;
             }
             is_deleting_.store(true, std::memory_order_release);
             send_backspace_uinput(expected_backspaces_);
@@ -828,8 +847,8 @@ namespace fcitx {
         switch (realMode) {
             case LotusMode::Preedit:
             case LotusMode::Emoji:
-                ic_->updateUserInterface(UserInterfaceComponent::InputPanel);
                 ic_->updatePreedit();
+                ic_->updateUserInterface(UserInterfaceComponent::InputPanel);
                 break;
             default: break;
         }
@@ -846,8 +865,8 @@ namespace fcitx {
                     lotusEngine_->pullCommit(&commit);
                     if (!commit.empty()) ic_->commitString(commit);
                 }
-                ic_->updateUserInterface(UserInterfaceComponent::InputPanel);
                 ic_->updatePreedit();
+                ic_->updateUserInterface(UserInterfaceComponent::InputPanel);
                 break;
             default: break;
         }
