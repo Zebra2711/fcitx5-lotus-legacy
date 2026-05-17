@@ -20,8 +20,8 @@
 #include <limits.h>
 
 std::thread mouse_thread = std::thread();
-
-void        mousePressResetThread() {
+//
+void mousePressResetThread() {
     const std::string mouse_socket_path = buildSocketPath("mouse_socket");
     LOTUS_INFO("Mouse press reset thread started.");
 

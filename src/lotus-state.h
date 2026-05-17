@@ -15,6 +15,7 @@
 #ifndef _FCITX5_LOTUS_STATE_H_
 #define _FCITX5_LOTUS_STATE_H_
 
+#include "lotus-input-backend.hpp"
 #include "lotus.h"
 #include "emoji-entry.h"
 #include "lotus-utils.h"
@@ -22,6 +23,9 @@
 #include <cstddef>
 #include <fcitx-utils/misc.h>
 #include <fcitx/inputcontext.h>
+
+#include <atomic>
+#include <memory>
 
 struct EmojiEntry;
 
@@ -81,30 +85,34 @@ namespace fcitx {
          * @return True if no history.
          */
         bool isEmptyHistory() const;
+        bool isReplacing() const;
+        bool isX11() const;
         friend class EmojiCandidateWord;
         friend class LotusEngine;
 
       private:
-        static constexpr size_t MAX_BUFFERED_KEYS = 50;
+        static constexpr size_t            MAX_BUFFERED_KEYS = 50;
 
-        LotusEngine*            engine_;
-        InputContext*           ic_;
-        CGoObject               lotusEngine_;
-        std::string             oldPreBuffer_;
-        bool                    hasHistory_              = false;
-        int                     expected_backspaces_     = 0;
-        int                     current_backspace_count_ = 0;
-        std::string             pending_commit_string_;
-        std::string             emojiBuffer_;
-        std::vector<EmojiEntry> emojiCandidates_;
-        bool                    waitAck_ = false;
-        std::vector<KeyEntry>   buffered_keys_; ///< Keystrokes buffered during replacement
-        bool                    isPrevSpace_        = false;
-        bool                    isPrevHyphen_       = false;
-        bool                    shouldCapitalize_   = false;
-        bool                    isPrevPunctuation_  = false;
-        int64_t                 lastDeactivateTime_ = 0;
-        bool                    wa_chromium_flag    = false;
+        LotusEngine*                       engine_;
+        InputContext*                      ic_;
+        std::unique_ptr<LotusInputBackend> inputBackend_;
+        std::string                        oldPreBuffer_;
+        bool                               hasHistory_              = false;
+        int                                expected_backspaces_     = 0;
+        int                                current_backspace_count_ = 0;
+        std::string                        pending_commit_string_;
+        std::string                        emojiBuffer_;
+        std::vector<EmojiEntry>            emojiCandidates_;
+        bool                               waitAck_ = false;
+        std::vector<KeyEntry>              buffered_keys_; ///< Keystrokes buffered during replacement
+        bool                               isPrevSpace_        = false;
+        bool                               shouldCapitalize_   = false;
+        bool                               isPrevPunctuation_  = false;
+        int64_t                            lastDeactivateTime_ = 0;
+        int64_t                            lastSkippedResetMs_ = 0;
+        bool                               wa_flag             = false;
+        bool                               surrtp              = false;
+        bool                               isTerm              = false;
 
         /**
          * @brief Connects to the uinput server.
@@ -123,7 +131,8 @@ namespace fcitx {
          * @param count Number of backspaces to send.
          */
         void send_backspace_uinput(int count) const;
-
+        void send_backspace_forward(int count) const;
+        void finishReplacement();
         /**
          * @brief Checks if autofill is certain for surrounding text.
          * @param s The surrounding text.
@@ -169,17 +178,12 @@ namespace fcitx {
          * @param deletedPart Text to delete.
          * @param addedPart Text to insert.
          */
-        void performReplacement(const std::string& deletedPart, const std::string& addedPart);
+        bool performReplacement(const std::string& deletedPart, const std::string& addedPart);
 
         /**
          * @brief Handles the double space to period replacement.
          */
         void handleDoubleSpaceReplacement();
-
-        /**
-         * @brief Handles the double hyphen to em-dash replacement.
-         */
-        void handleDoubleHyphenReplacement();
 
         /**
          * @brief Checks and forwards special keys.
@@ -210,15 +214,6 @@ namespace fcitx {
          * @param currentSym Current key symbol.
         */
         void processNormalKey(KeyEvent& keyEvent, KeySym currentSym);
-
-        /**
-         * @brief Replays keystrokes buffered during replacement.
-         *
-         * When is_deleting_ is true, non-special keystrokes are buffered
-         * instead of being discarded. This method replays them after the
-         * replacement completes.
-         */
-        void replayBufferedKeys();
     };
 
 } // namespace fcitx

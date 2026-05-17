@@ -1,0 +1,251 @@
+/*
+ * SPDX-FileCopyrightText: 2026 fcitx5-lotus contributors
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * Lotus input backend using the native Unikey engine
+ * (fcitx5-unikey patterns; no Go/CGO).
+ */
+#ifdef LOTUS_ENGINE_UNIKEY
+#include "lotus-input-backend.hpp"
+#include "lotus-config.h"
+#include "lotus-engine.h"
+#include "unikeyinputcontext.h"
+#include "usrkeymap.h"
+#include <vnconv.h>
+#include <fcitx-utils/key.h>
+#include <fcitx-utils/keysym.h>
+#include <fcitx-utils/log.h>
+#if LOTUS_USE_MODERN_FCITX_API
+#include <fcitx-utils/standardpaths.h>
+#else
+#include <fcitx-utils/standardpath.h>
+#include <fcntl.h>
+#endif
+#include <fcitx-utils/utf8.h>
+#include <unordered_set>
+namespace fcitx {
+    namespace {
+        static bool isWordBreakSym(unsigned char c) {
+            static const std::unordered_set<unsigned char> WordBreakSyms = {
+                ',', ';', ':', '.', '\"', '\'', '!', '?', ' ',
+            };
+#if __cpp_lib_generic_unordered_lookup >= 201811L || __cplusplus >= 202002L
+            return WordBreakSyms.contains(c);
+#else
+            return WordBreakSyms.count(c) > 0;
+#endif
+        }
+        static UkInputMethod mapLotusIm(const std::string& name) {
+            if (name.find("Telex 2") != std::string::npos && name.find("VNI") == std::string::npos)
+                return UkSimpleTelex2;
+            if (name.find("VNI") != std::string::npos || name == "VNI")
+                return UkVni;
+            if (name.find("VIQR") != std::string::npos)
+                return UkViqr;
+            if (name.find("Microsoft") != std::string::npos || name.find("Ms") != std::string::npos)
+                return UkMsVi;
+            if (name.find("User") != std::string::npos || name.find("Custom") != std::string::npos)
+                return UkUsrIM;
+            if (name.find("Telex + VNI") != std::string::npos)
+                return UkTelex;
+            if (name.find("Telex") != std::string::npos)
+                return UkSimpleTelex;
+            return UkSimpleTelex;
+        }
+        class LotusUnikeyInputBackend final : public LotusInputBackend {
+          public:
+            void recreateEngine(LotusEngine* engine) override {
+                im_        = std::make_unique<UnikeyInputMethod>();
+                uic_       = std::make_unique<UnikeyInputContext>(im_.get());
+                applyFromConfig(engine);
+                resetEngine();
+            }
+            void setOptions(LotusEngine* engine) override {
+                applyFromConfig(engine);
+            }
+            void resetEngine() override {
+                pendingPullCommit_.clear();
+                preeditStr_.clear();
+                lastShiftPressed_ = FcitxKey_None;
+                lastKeyWithShift_ = false;
+                autoCommit_       = false;
+                if (uic_) uic_->resetBuf();
+            }
+            void rebuildFromText(const char* utf8) override {
+                resetEngine();
+                if (!uic_ || utf8 == nullptr) return;
+                for (auto ucs : utf8::MakeUTF8CharRange(std::string_view(utf8))) {
+                    if (ucs < 128U)
+                        uic_->putChar(static_cast<unsigned int>(ucs));
+                    else uic_->putChar(ucs);
+                }
+                syncState(FcitxKey_None);
+            }
+            bool processKeyEventAndPull(uint32_t sym, uint32_t state, std::string* commit, std::string* preedit) override {
+                pendingPullCommit_.clear();
+                bool ok = dispatch(sym, state);
+                if (commit) *commit = pendingPullCommit_;
+                if (preedit) *preedit = preeditStr_;
+                pendingPullCommit_.clear();
+                return ok;
+            }
+            bool processKeyEvent(uint32_t sym, uint32_t state) override {
+                pendingPullCommit_.clear();
+                return dispatch(sym, state);
+            }
+            void pullCommitAndPreedit(std::string* commit, std::string* preedit) override {
+                if (commit) *commit = pendingPullCommit_;
+                if (preedit) *preedit = preeditStr_;
+                pendingPullCommit_.clear();
+            }
+            void pullCommit(std::string* out) override {
+                if (out) *out = pendingPullCommit_;
+                pendingPullCommit_.clear();
+            }
+            void pullPreedit(std::string* out) override {
+                if (out) *out = preeditStr_;
+            }
+            void commitPreedit() override {
+                if (!preeditStr_.empty()) pendingPullCommit_ = preeditStr_;
+                preeditStr_.clear();
+                if (uic_) uic_->resetBuf();
+            }
+          private:
+            void applyFromConfig(LotusEngine* engine) {
+                if (!im_) return;
+                reloadKeymap();
+                reloadMacroTable();
+                UkInputMethod currentIM_ = mapLotusIm(engine->config().inputMethod.value());
+                im_->setInputMethod(currentIM_);
+                im_->setOutputCharset(CONV_CHARSET_XUTF8);
+                UnikeyOptions opt{};
+                opt.freeMarking         = *engine->config().freeMarking ? 1 : 0;
+                opt.modernStyle         = *engine->config().modernStyle ? 1 : 0;
+                opt.macroEnabled        = *engine->config().enableMacro ? 1 : 0;
+                opt.useUnicodeClipboard = 0;
+                opt.alwaysMacro         = 0;
+                opt.strictSpellCheck    = 0;
+                opt.useIME              = 0;
+                opt.spellCheckEnabled   = *engine->config().spellCheck ? 1 : 0;
+                opt.autoNonVnRestore    = *engine->config().autoNonVnRestore ? 1 : 0;
+                im_->setOptions(&opt);
+            }
+            void reloadKeymap() {
+#if LOTUS_USE_MODERN_FCITX_API
+                auto keymapFile = StandardPaths::global().open(StandardPathsType::PkgConfig, "lotus/keymap.txt");
+#else
+                auto keymapFile = StandardPath::global().open(StandardPath::Type::PkgConfig, "lotus/keymap.txt", O_RDONLY);
+#endif
+                if (keymapFile.isValid()) {
+                    UkLoadKeyMap(keymapFile.fd(), im_->sharedMem()->usrKeyMap);
+                    im_->sharedMem()->usrKeyMapLoaded = true;
+                } else {
+                    im_->sharedMem()->usrKeyMapLoaded = false;
+                }
+            }
+            void reloadMacroTable() {
+#if LOTUS_USE_MODERN_FCITX_API
+                auto path = (StandardPaths::global().locate(StandardPathsType::PkgConfig, "lotus/macro")).string();
+#else
+                auto path = StandardPath::global().locate(StandardPath::Type::PkgConfig, "lotus/macro");
+#endif
+                if (!path.empty()) im_->loadMacroTable(path.c_str());
+            }
+            void eraseChars(int num_chars) {
+                int           i;
+                int           k = num_chars;
+                unsigned char c = 0;
+                for (i = static_cast<int>(preeditStr_.length()) - 1; i >= 0 && k > 0; --i) {
+                    c = preeditStr_.at(static_cast<size_t>(i));
+                    if (c < (unsigned char)'\x80' || c >= (unsigned char)'\xC0')
+                        --k;
+                }
+                preeditStr_.erase(static_cast<size_t>(i + 1));
+            }
+            void syncState(KeySym sym) {
+                if (!uic_) return;
+                if (uic_->backspaces() > 0) {
+                    if (static_cast<int>(preeditStr_.length()) <= uic_->backspaces())
+                        preeditStr_.clear();
+                    else
+                        eraseChars(uic_->backspaces());
+                }
+                if (uic_->bufChars() > 0) {
+                    preeditStr_.append(reinterpret_cast<const char*>(uic_->buf()), static_cast<size_t>(uic_->bufChars()));
+                } else if (sym != FcitxKey_Shift_L && sym != FcitxKey_Shift_R && sym != FcitxKey_None) {
+                    preeditStr_.append(utf8::UCS4ToUTF8(sym));
+                }
+            }
+            bool dispatch(uint32_t sym, uint32_t state) {
+                if (!uic_) return false;
+                KeyStates  st(static_cast<KeyStates>(state));
+                const auto rawSym = static_cast<KeySym>(sym);
+                if (st.testAny(KeyState::Ctrl_Alt) || rawSym == FcitxKey_Control_L || rawSym == FcitxKey_Control_R || rawSym == FcitxKey_Tab || rawSym == FcitxKey_Return ||
+                    rawSym == FcitxKey_Delete || rawSym == FcitxKey_KP_Enter || (rawSym >= FcitxKey_Home && rawSym <= FcitxKey_Insert) ||
+                    (rawSym >= FcitxKey_KP_Home && rawSym <= FcitxKey_KP_Delete)) {
+                    uic_->filter(0);
+                    if (!preeditStr_.empty()) pendingPullCommit_ = preeditStr_;
+                    preeditStr_.clear();
+                    uic_->resetBuf();
+                    return false;
+                }
+                if (st.test(KeyState::Super)) return false;
+                if ((rawSym >= FcitxKey_Caps_Lock && rawSym <= FcitxKey_Hyper_R) || rawSym == FcitxKey_Shift_L || rawSym == FcitxKey_Shift_R) return false;
+                if (rawSym == FcitxKey_BackSpace) {
+                    uic_->backspacePress();
+                    if (uic_->backspaces() == 0 || preeditStr_.empty()) {
+                        if (!preeditStr_.empty()) pendingPullCommit_ = preeditStr_;
+                        preeditStr_.clear();
+                        uic_->resetBuf();
+                        return !pendingPullCommit_.empty();
+                    }
+                    if (static_cast<int>(preeditStr_.length()) <= uic_->backspaces())
+                        preeditStr_.clear();
+                    else
+                        eraseChars(uic_->backspaces());
+                    if (uic_->bufChars() > 0)
+                        preeditStr_.append(reinterpret_cast<const char*>(uic_->buf()), static_cast<size_t>(uic_->bufChars()));
+                    return true;
+                }
+                if (rawSym >= FcitxKey_KP_Multiply && rawSym <= FcitxKey_KP_9) {
+                    uic_->filter(0);
+                    if (!preeditStr_.empty()) pendingPullCommit_ = preeditStr_;
+                    preeditStr_.clear();
+                    uic_->resetBuf();
+                    return false;
+                }
+                if (rawSym >= FcitxKey_space && rawSym <= FcitxKey_asciitilde) {
+                    //const bool beginWord = uk_->isAtWordBeginning();
+                    uic_->setCapsState(st.test(KeyState::Shift) ? 1 : 0, st.test(KeyState::CapsLock) ? 1 : 0);
+                    uic_->filter(sym);
+                    syncState(rawSym);
+                    if (!preeditStr_.empty() && preeditStr_.back() == static_cast<char>(sym) && isWordBreakSym(static_cast<unsigned char>(sym))) {
+                        pendingPullCommit_ = preeditStr_;
+                        preeditStr_.clear();
+                        uic_->resetBuf();
+                        return true;
+                    }
+                    return true;
+                }
+                uic_->filter(0);
+                syncState(rawSym);
+                if (!preeditStr_.empty()) pendingPullCommit_ = preeditStr_;
+                preeditStr_.clear();
+                uic_->resetBuf();
+                return false;
+            }
+            std::unique_ptr<UnikeyInputMethod> im_;
+            std::unique_ptr<UnikeyInputContext> uic_;
+            std::string preeditStr_;
+            std::string pendingPullCommit_;
+            KeySym lastShiftPressed_ = FcitxKey_None;
+            bool lastKeyWithShift_ = false;
+            bool autoCommit_       = false;
+        };
+    } // namespace
+    std::unique_ptr<LotusInputBackend> makeLotusInputBackend() {
+        return std::make_unique<LotusUnikeyInputBackend>();
+    }
+} // namespace fcitx
+#endif // LOTUS_ENGINE_UNIKEY

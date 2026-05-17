@@ -16,16 +16,11 @@ BuildRequires:  systemd-rpm-macros
 BuildRequires:  systemd-devel
 BuildRequires:  libX11-devel
 
-BuildRequires:  go
-BuildRequires:  python-rpm-macros
 Requires(post): udev
 BuildRequires:  sysuser-tools
 
 %{?systemd_requires}
 Requires:       fcitx5
-Requires:       python3-QtPy
-Requires:       (python3-PyQt6 or python3-pyside6)
-Requires:       python3-dbus-python
 Requires:       hicolor-icon-theme
 
 %description
@@ -49,7 +44,7 @@ Vietnamese input method for fcitx5
 %license %{_datadir}/licenses/%{name}/GPL-3.0-or-later.txt
 %license %{_datadir}/licenses/%{name}/LGPL-2.1-or-later.txt
 %{_bindir}/fcitx5-lotus-server
-%{_bindir}/fcitx5-lotus-settings
+#%{_bindir}/fcitx5-lotus-settings
 
 %dir %{_libdir}/fcitx5
 %{_libdir}/fcitx5/liblotus.so
@@ -65,8 +60,8 @@ Vietnamese input method for fcitx5
 %dir %{_datadir}/fcitx5/lotus
 %{_datadir}/fcitx5/lotus/vietnamese.cm.dict
 
-%{_datadir}/fcitx5-lotus/settings-gui/
-%{_datadir}/applications/org.fcitx.Fcitx5.Addon.Lotus.Settings.desktop
+#%{_datadir}/fcitx5-lotus/settings-gui/
+#%{_datadir}/applications/org.fcitx.Fcitx5.Addon.Lotus.Settings.desktop
 
 %{_datadir}/icons/hicolor/scalable/apps/fcitx-lotus.svg
 %{_datadir}/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx-lotus.svg

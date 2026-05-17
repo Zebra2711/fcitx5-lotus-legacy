@@ -5,5 +5,12 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 %:
 	dh $@
 
+override_dh_auto_configure:
+	if [ -f packaging/debian/ubuntu.patch ]; then \
+		echo "Applying ubuntu.patch"; \
+		patch -p1 < packaging/debian/ubuntu.patch || exit 1; \
+	fi
+	dh_auto_configure -- -DENABLE_QT=$(if $(filter noqut,$(DEB_BUILD_PROFILES)),OFF,ON)
+
 override_dh_dwz:
 	@echo "Skipping dh_dwz (incompatible with Go/mixed debug sections)"

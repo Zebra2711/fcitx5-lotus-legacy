@@ -25,12 +25,9 @@
 #include <fcitx/addonmanager.h>
 #include <fcitx/inputmethodengine.h>
 #include <fcitx/instance.h>
-
 namespace fcitx {
 
-    class CGoObject;
     class LotusState;
-
     /**
      * @brief Main engine class for Lotus input method.
      *
@@ -164,20 +161,6 @@ namespace fcitx {
         const lotusCustomKeymap& customKeymap() const;
 
         /**
-         * @brief Gets the dictionary handle.
-         * @return CGo handle for the dictionary.
-         */
-        uintptr_t dictionary() const {
-            return dictionary_.handle();
-        }
-
-        /**
-         * @brief Gets the macro table handle.
-         * @return CGo handle for the macro table.
-         */
-        uintptr_t macroTable() const;
-
-        /**
          * @brief Gets the emoji loader.
          * @return Reference to emoji loader instance.
          */
@@ -187,19 +170,18 @@ namespace fcitx {
             }
             return *emojiLoader_;
         }
+        LotusMode getAppRule(const std::string& appName);
 
       private:
-        Instance*                                  instance_;
-        lotusConfig                                config_;
-        lotusCustomKeymap                          customKeymap_;
-        lotusCustomKeymap                          emptyCustomKeymap_;
+        Instance*                instance_;
+        lotusConfig              config_;
+        lotusCustomKeymap        customKeymap_;
+        lotusCustomKeymap        emptyCustomKeymap_;
 
-        lotusMacroTable                            macroTables_;
-        CGoObject                                  macroTableObject_;
-        lotusAppRules                              appRulesTables_;
+        lotusAppRules            appRulesTables_;
 
-        FactoryFor<LotusState>                     factory_;
-        std::vector<std::string>                   imNames_;
+        FactoryFor<LotusState>   factory_;
+        std::vector<std::string> imNames_;
 
         std::unique_ptr<SimpleAction>              charsetAction_;
         std::vector<std::unique_ptr<SimpleAction>> charsetSubAction_;
@@ -209,23 +191,20 @@ namespace fcitx {
         std::unique_ptr<SimpleAction>              macroAction_;
         std::unique_ptr<SimpleAction>              capitalizeMacroAction_;
         std::unique_ptr<SimpleAction>              autoNonVnRestoreAction_;
-        std::unique_ptr<SimpleAction>              enableDictionaryAction_;
         std::unique_ptr<SimpleAction>              settingsAction_;
         std::vector<SimpleAction*>                 toggleActions_;
         std::vector<ScopedConnection>              connections_;
-        CGoObject                                  dictionary_;
         std::unordered_map<std::string, LotusMode> appRules_;
         std::string                                appRulesPath_;
         bool                                       isSelectingAppMode_ = false;
         std::string                                currentConfigureApp_;
         FCITX_ADDON_DEPENDENCY_LOADER(emoji, instance_->addonManager());
-        std::unique_ptr<EmojiLoader>          emojiLoader_;
-        bool                                  isGnome_ = false;
-        mutable std::mutex                    appRulesMutex_;
-        std::unordered_map<KeySym, LotusMode> modeMenuMapping_;
+        std::unique_ptr<EmojiLoader> emojiLoader_;
+        bool                         isGnome_ = false;
+        mutable std::mutex           appRulesMutex_;
 
         /**
-         * @brief Refreshes the bamboo engine with current settings.
+         * @brief Refreshes the engine with current settings.
          */
         void refreshEngine();
 
@@ -323,12 +302,6 @@ namespace fcitx {
          * @return Name of current program
          */
         static std::string getProgramName(InputContext* ic);
-
-        /**
-         * @brief Detects if the system is in dark mode.
-         * @return true if dark mode, false if light mode or detection failed.
-         */
-        static bool isDarkMode();
     };
 
     /**

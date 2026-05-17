@@ -75,13 +75,15 @@ void UinputDevice::send_backspace() {
     struct input_event ev[4]{};
     ev[0].type  = EV_KEY;
     ev[0].code  = KEY_BACKSPACE;
-    ev[0].value = 1; // Press
-    // Zero-initialize ev[1] via {} set this event to SYN_REPORT
+    ev[0].value = 1;
+    ev[1].type  = EV_SYN;
+    ev[1].code  = SYN_REPORT;
     ev[2].type  = EV_KEY;
     ev[2].code  = KEY_BACKSPACE;
-    ev[2].value = 0; // Release
-    // Zero-initialize ev[3] via {} set this event to SYN_REPORT
-    write(guard_.get(), ev, sizeof(ev));
+    ev[2].value = 0;
+    ev[3].type  = EV_SYN;
+    ev[3].code  = SYN_REPORT;
+    (void)write(guard_.get(), ev, sizeof(ev));
 }
 
 LibinputContext::LibinputContext(const struct libinput_interface* interface) : udev_(udev_new()) {
@@ -264,6 +266,7 @@ int main(int argc, char* argv[]) {
     sigaction(SIGTERM, &sa, nullptr);
     sigaction(SIGINT, &sa, nullptr);
 
+    int64_t last_bs_ms = 0;
     while (g_running.load(std::memory_order_acquire)) {
         int poll_timeout = (pending_backspaces > 0) ? 1 : -1;
         int ret          = poll(fds.data(), fds.size(), poll_timeout);
@@ -275,10 +278,18 @@ int main(int argc, char* argv[]) {
             break;
         }
 
-        if (ret == 0) {
-            if (pending_backspaces > 0) {
+        if (pending_backspaces > 0) {
+            struct timespec ts{};
+            clock_gettime(CLOCK_MONOTONIC, &ts);
+            int64_t now_ms = static_cast<int64_t>(ts.tv_sec) * 1000 + ts.tv_nsec / 1000000;
+            if (now_ms - last_bs_ms >= 1) {
                 uinput.send_backspace();
                 --pending_backspaces;
+                last_bs_ms = now_ms;
+                if (pending_backspaces == 0) {
+                    char ack = '7';
+                    send(fds[3].fd, &ack, sizeof(ack), MSG_NOSIGNAL);
+                }
             }
         }
 
@@ -333,7 +344,7 @@ int main(int argc, char* argv[]) {
                 LotusLogger::instance().warn("Keyboard client disconnected or connection error");
                 kb_client_fd.reset(-1);
                 fds[KB_CLIENT_INDEX].fd = -1;
-            } else {
+            } else if (count > 0) {
                 pending_backspaces += count - 1;
                 uinput.send_backspace();
             }

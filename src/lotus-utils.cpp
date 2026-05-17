@@ -13,9 +13,6 @@
 #include <pwd.h>
 #include <unistd.h>
 
-#include <algorithm>
-#include <chrono>
-
 // Global variables
 std::atomic<fcitx::LotusMode> realMode{fcitx::LotusMode::Smooth};
 std::atomic<bool>             needEngineReset{false};
@@ -26,27 +23,19 @@ std::atomic<int>              uinput_client_fd_{-1};
 std::atomic<unsigned int>     realtextLen{0};
 std::atomic<int>              mouse_socket_fd{-1};
 
+
+std::mutex                    monitor_mutex;
+std::condition_variable       monitor_cv;
+
 FCITX_DEFINE_LOG_CATEGORY(lotus, "lotus", fcitx::LogLevel::NoLog);
 
 std::string buildSocketPath(const char* base_path_suffix) {
-    struct passwd  pwd{};
-    struct passwd* result   = nullptr;
-    long           buf_size = sysconf(_SC_GETPW_R_SIZE_MAX);
-    if (buf_size == -1) {
-        buf_size = 16384;
-    }
-    std::vector<char> buf(buf_size);
-    std::string       username;
-    int               res = getpwuid_r(getuid(), &pwd, buf.data(), buf_size, &result);
-    if (res == 0 && result != nullptr) {
-        username = result->pw_name;
-    } else {
-        username = "unknown";
-    }
-    std::string path;
+    struct passwd* pw         = getpwuid(getuid());
+    const char*    username_c = (pw != nullptr) ? pw->pw_name : nullptr;
+    std::string    path;
     path.reserve(32);
     path += "lotussocket-";
-    path += username;
+    path += ((username_c != nullptr) ? username_c : "unknown");
     path += '-';
     path += base_path_suffix;
     const size_t max_socket_path_length = UNIX_PATH_MAX - 1;
@@ -65,6 +54,12 @@ bool isBackspace(uint32_t sym) {
 int compareAndSplitStrings(const std::string& A, const std::string& B, std::string& deletedPart, std::string& addedPart) {
     size_t i = 0;
     size_t j = 0;
+#if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
+    i = compare_split_avx512(A.data(), B.data(), A.size(), B.size(), nullptr);
+    while (i > 0 && i < A.size() && ((A[i] & 0xC0) == 0x80))
+        i--;
+    j = i;
+#else
     while (i < A.size() && j < B.size()) {
         unsigned int lenA = fcitx_utf8_char_len(&A[i]);
         unsigned int lenB = fcitx_utf8_char_len(&B[j]);
@@ -81,7 +76,7 @@ int compareAndSplitStrings(const std::string& A, const std::string& B, std::stri
             break;
         }
     }
-
+#endif
     deletedPart.assign(A, i);
     addedPart.assign(B, j);
     return (deletedPart.empty() && addedPart.empty()) ? 1 : 2;
