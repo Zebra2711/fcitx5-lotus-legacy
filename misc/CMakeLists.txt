@@ -1,8 +1,11 @@
 option(INSTALL_OPENRC "Install OpenRC script" OFF)
 option(INSTALL_RUNIT "Install Runit script" OFF)
+option(INSTALL_SYSTEMD "Install Systemd script" ON)
 
+if(INSTALL_SYSTEMD)
 install(FILES fcitx5-lotus-server@.service
     DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system)
+endif(INSTALL_SYSTEMD)
 
 install(FILES 99-lotus.rules
     DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/udev/rules.d)
