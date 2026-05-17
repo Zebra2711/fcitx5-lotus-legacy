@@ -24,7 +24,12 @@
 #include <fcitx-utils/charutils.h>
 #include <fcitx-utils/i18n.h>
 #include <fcitx-utils/key.h>
-#include <fcitx-config/iniparser.h>
+#if LOTUS_USE_MODERN_FCITX_API
+#include <fcitx-utils/standardpaths.h>
+#else
+#include <fcitx-utils/standardpath.h>
+#include <fcntl.h>
+#endif
 #include <fcitxqtconfiguiwidget.h>
 #include <fcitxqtkeysequencewidget.h>
 

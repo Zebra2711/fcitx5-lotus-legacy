@@ -21,7 +21,11 @@
 #include <fcitx-utils/charutils.h>
 #include <fcitx-utils/fs.h>
 #include <fcitx-utils/i18n.h>
-#include <fcitx-config/iniparser.h>
+#if LOTUS_USE_MODERN_FCITX_API
+#include <fcitx-utils/standardpaths.h>
+#else
+#include <fcitx-utils/standardpath.h>
+#endif
 #include <fcitx-utils/unixfd.h>
 #include <fcntl.h>
 #include <iterator>
