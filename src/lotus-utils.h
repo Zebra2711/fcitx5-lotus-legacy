@@ -97,7 +97,6 @@ bool isBackspace(uint32_t sym);
  * @brief Compares two strings and computes diff.
  * @param A First string.
  * @param B Second string.
- * @param commonPrefix Output common prefix.
  * @param deletedPart Output deleted portion.
  * @param addedPart Output added portion.
  * @return Comparison result code.
