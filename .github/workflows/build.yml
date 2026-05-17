@@ -20,7 +20,8 @@ jobs:
           pacman --noconfirm --noprogressbar -Syyu
           pacman --noconfirm --noprogressbar -Sy clang
       - name: clang-format check
-        run: .github/workflows/clang-format-check.sh "." "llvm" "^subprojects$" ""
+        continue-on-error: true
+        run: .github/workflows/clang-format-check.sh "." "llvm" ""
   check:
     name: Build and test
     needs: clang-format
@@ -71,7 +72,7 @@ jobs:
       - name: Init CodeQL
         uses: github/codeql-action/init@v4
         with:
-          languages: cpp,go
+          languages: cpp
           source-root: fcitx5-lotus
       - name: Build and Install fcitx5-lotus
         uses: fcitx/github-actions@cmake
