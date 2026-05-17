@@ -74,11 +74,10 @@
  *
  * Chromium-based browsers that need special handling for text replacement.
  */
-inline constexpr std::array<std::string_view, 19> ack_apps = {
+inline constexpr std::array<std::string_view, 14> ack_apps = {
   "chrome", "chromium", "brave", "edge", "vivaldi",
   "opera", "coccoc", "cromite", "helium", "thorium",
-  "slimjet", "yandex", "vesktop", "obsidian", "mullvad",
-  "firefox", "zen", "waterfox", "wps"
+  "slimjet", "yandex", "vesktop", "obsidian"
 };
 
 /**
@@ -91,4 +90,20 @@ inline constexpr std::array<std::string_view, 1> surrtp_apps = {
 
 inline constexpr std::array<std::string_view, 5> terminalm = {
   "foot", "kitty", "alacritty", "ghostty", "st"
+};
+
+struct AppDelayConfig {
+    std::string_view name;
+    int commit_delay_ms;
+};
+
+inline constexpr std::array<AppDelayConfig, 8> app_delay_configs = {
+    AppDelayConfig{"firefox",  7},
+    AppDelayConfig{"mullvad",  7},
+    AppDelayConfig{"zen",      7},
+    AppDelayConfig{"waterfox", 7},
+    AppDelayConfig{"brave",    1},
+    AppDelayConfig{"chromium", 1},
+    AppDelayConfig{"vesktop",  1},
+    AppDelayConfig{"wps",      10},
 };

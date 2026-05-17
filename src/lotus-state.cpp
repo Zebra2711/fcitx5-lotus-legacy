@@ -12,6 +12,8 @@
 #include "lotus-utils.h"
 #include "lotus-input-backend.hpp"
 #include "lotus.h"
+#include "app_quirks.h"
+
 #include <cstddef>
 #include <fcitx-utils/log.h>
 #include <fcitx-utils/utf8.h>
@@ -111,7 +113,7 @@ namespace fcitx {
             //std::this_thread::sleep_for(std::chrono::milliseconds(count * 5));
         } else {
             LOTUS_INFO("firefox hit me");
-            std::this_thread::sleep_for(std::chrono::milliseconds(count * 10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(wa_ff*count));
         }
     }
     void LotusState::send_backspace_forward(int count) const {
@@ -119,7 +121,9 @@ namespace fcitx {
         for (int i = 0; i < count; ++i) {
             ic_->forwardKey(Key(FcitxKey_BackSpace, KeyState::NoState), false);
             ic_->forwardKey(Key(FcitxKey_BackSpace, KeyState::NoState), true);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(wa_ff));
     }
     void LotusState::finishReplacement() {
         is_deleting_.store(false, std::memory_order_release);
@@ -455,11 +459,14 @@ namespace fcitx {
             ic_->commitString(addedPart);
             return true;
         } else {
-            is_deleting_.store(true, std::memory_order_release);
-            if (0 && isTerm) {
+            if (isTerm || expected_backspaces_ == 2) {
                 send_backspace_forward(expected_backspaces_ - 1);
+                LOTUS_INFO("Send " + std::to_string(expected_backspaces_ - 1) +"BS (NO UINPUT)");
+                ic_->commitString(addedPart);
                 return true;
-            } else send_backspace_uinput(expected_backspaces_);
+            }
+            is_deleting_.store(true, std::memory_order_release);
+            send_backspace_uinput(expected_backspaces_);
             LOTUS_INFO("Send " + std::to_string(expected_backspaces_ - 1 - autofillOffset) + " backspaces + 1 trigger");
             if (autofillOffset) LOTUS_INFO("Send more 1 extra delete suggestions");
         }
@@ -527,6 +534,7 @@ namespace fcitx {
             if (!deletedPart.empty()) {
                 keyEvent.filterAndAccept();
                 performReplacement(deletedPart, addedPart);
+                //if (isTerm) keyEvent.forward();
             } else {
                 bool wasAutoCapitalized = (currentSym != keyEvent.rawKey().sym());
                 if (!addedPart.empty() && (keyUtf8 != addedPart || wasAutoCapitalized)) {
@@ -593,6 +601,7 @@ namespace fcitx {
                 if (is_deleting_.load()) finishReplacement();
                 if (!wa_flag) keyEvent.filterAndAccept();
                 performReplacement(deletedPart, addedPart);
+                //if (isTerm) keyEvent.forward();
                 oldPreBuffer_ = preeditStr;
             }
         }

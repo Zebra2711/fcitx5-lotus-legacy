@@ -301,7 +301,7 @@ namespace fcitx {
          * @param ic Current input context.
          * @return Name of current program
          */
-        static std::string getProgramName(InputContext* ic);
+        std::string getProgramName(InputContext* ic);
     };
 
     /**

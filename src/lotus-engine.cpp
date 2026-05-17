@@ -203,6 +203,7 @@ if (!alreadySetup) {
         state->isTerm = false;
         state->wa_flag  = false;
         state->surrtp   = false;
+        state->wa_ff = 5;
         bool prevAck = state->waitAck_;
         state->waitAck_ = false;
         if (*config_.fixUinputWithAck) {
@@ -219,6 +220,13 @@ if (!alreadySetup) {
 #else
                 auto contains = [&](std::string_view s) { return appName.find(s) != std::string::npos; };
 #endif
+                for (const auto& cfg : app_delay_configs) {
+                    if (contains(cfg.name)) {
+                        state->wa_ff = cfg.commit_delay_ms;
+                        LOTUS_INFO(std::to_string(delay_ff) + "(ms/BS) delay");
+                        break;
+                    }
+                }
                 for (const auto& ackApp : ack_apps) {
                     if (contains(ackApp)) {
                         if (is_dbus) {

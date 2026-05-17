@@ -111,6 +111,7 @@ namespace fcitx {
         int64_t                            lastDeactivateTime_ = 0;
         int64_t                            lastSkippedResetMs_ = 0;
         bool                               wa_flag             = false;
+        int                                wa_ff               = 3;
         bool                               surrtp              = false;
         bool                               isTerm              = false;
 
