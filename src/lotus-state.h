@@ -95,7 +95,7 @@ namespace fcitx {
 
         LotusEngine*                       engine_;
         InputContext*                      ic_;
-        std::unique_ptr<LotusInputBackend> inputBackend_;
+        std::unique_ptr<LotusInputBackend> lotusEngine_;
         std::string                        oldPreBuffer_;
         bool                               hasHistory_              = false;
         int                                expected_backspaces_     = 0;

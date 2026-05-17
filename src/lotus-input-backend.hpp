@@ -16,10 +16,10 @@ namespace fcitx {
 
     class LotusEngine;
 
-    /**
+/**
  * Per-context Vietnamese engine (Bamboo or Unikey implementation).
  */
-    class LotusInputBackend {
+    class  LotusInputBackend {
       public:
         virtual ~LotusInputBackend() = default;
 
