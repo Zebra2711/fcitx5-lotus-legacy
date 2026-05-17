@@ -23,7 +23,11 @@
 #include <Qt>
 #include <fcitx-utils/fs.h>
 #include <fcitx-utils/i18n.h>
+#if LOTUS_USE_MODERN_FCITX_API
 #include <fcitx-utils/standardpaths.h>
+#else
+#include <fcitx-utils/standardpath.h>
+#endif
 #include <fcitxqtconfiguiwidget.h>
 #include <memory>
 
@@ -124,20 +128,34 @@ void MacroEditor::addWordAccepted() {
 }
 
 void MacroEditor::load() {
-    auto path = StandardPaths::global().locate(StandardPathsType::PkgConfig,
-                                               "lotus/macro");
-    table_->loadFromFile(path.string().c_str());
+#if LOTUS_USE_MODERN_FCITX_API
+    auto path = (StandardPaths::global().locate(StandardPathsType::PkgConfig,
+                                               "lotus/macro")).string();
+#else
+    auto path = (StandardPath::global().locate(StandardPathsType::PkgConfig,
+                                               "lotus/macro"));
+#endif
+    table_->loadFromFile(path.c_str());
     model_->load(table_.get());
 }
 
 void MacroEditor::save() {
     model_->save(table_.get());
+#if LOTUS_USE_MODERN_FCITX_API
     StandardPaths::global().safeSave(StandardPathsType::PkgConfig,
                                      "lotus/macro", [this](int fd) -> bool {
                                          UnixFD unixFD(fd);
                                          auto f = fs::openFD(unixFD, "wb");
                                          return table_->writeToFp(f.release());
                                      });
+#else
+    StandardPath::global().safeSave(StandardPathsType::PkgConfig,
+                                     "lotus/macro", [this](int fd) -> bool {
+                                         UnixFD unixFD(fd);
+                                         auto f = fs::openFD(unixFD, "wb");
+                                         return table_->writeToFp(f.release());
+                                     });
+#endif
 }
 
 void MacroEditor::importMacro() {

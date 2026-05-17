@@ -16,7 +16,11 @@
 #include <fcitx-utils/key.h>
 #include <fcitx-utils/keysym.h>
 #include <fcitx-utils/log.h>
+#if LOTUS_USE_MODERN_FCITX_API
 #include <fcitx-utils/standardpaths.h>
+#else
+#include <fcitx-utils/standardpath.h>
+#endif
 #include <fcitx-utils/utf8.h>
 #include <unordered_set>
 namespace fcitx {
@@ -123,7 +127,11 @@ namespace fcitx {
                 im_->setOptions(&opt);
             }
             void reloadKeymap() {
+#if LOTUS_USE_MODERN_FCITX_API
                 auto keymapFile = StandardPaths::global().open(StandardPathsType::PkgConfig, "lotus/keymap.txt");
+#else
+                auto keymapFile = StandardPath::global().open(StandardPath::Type::PkgConfig, "lotus/keymap.txt", O_RDONLY);
+#endif
                 if (keymapFile.isValid()) {
                     UkLoadKeyMap(keymapFile.fd(), im_->sharedMem()->usrKeyMap);
                     im_->sharedMem()->usrKeyMapLoaded = true;
@@ -132,8 +140,12 @@ namespace fcitx {
                 }
             }
             void reloadMacroTable() {
-                auto path = StandardPaths::global().locate(StandardPathsType::PkgConfig, "lotus/macro");
-                if (!path.empty()) im_->loadMacroTable(path.string().c_str());
+#if LOTUS_USE_MODERN_FCITX_API
+                auto path = (StandardPaths::global().locate(StandardPathsType::PkgConfig, "lotus/macro")).string();
+#else
+                auto path = StandardPath::global().locate(StandardPath::Type::PkgConfig, "lotus/macro");
+#endif
+                if (!path.empty()) im_->loadMacroTable(path.c_str());
             }
             void eraseChars(int num_chars) {
                 int           i;

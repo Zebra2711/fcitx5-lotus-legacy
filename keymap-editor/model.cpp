@@ -21,7 +21,11 @@
 #include <fcitx-utils/charutils.h>
 #include <fcitx-utils/fs.h>
 #include <fcitx-utils/i18n.h>
+#if LOTUS_USE_MODERN_FCITX_API
 #include <fcitx-utils/standardpaths.h>
+#else
+#include <fcitx-utils/standardpath.h>
+#endif
 #include <fcitx-utils/unixfd.h>
 #include <fcntl.h>
 #include <iterator>
@@ -173,8 +177,11 @@ bool KeymapModel::needSave() const { return needSave_; }
 
 void KeymapModel::load() {
     beginResetModel();
-    auto keymapFile = StandardPaths::global().open(StandardPathsType::PkgConfig,
-                                                   "lotus/keymap.txt");
+#if LOTUS_USE_MODERN_FCITX_API
+    auto keymapFile = StandardPaths::global().open(StandardPathsType::PkgConfig, "lotus/keymap.txt");
+#else
+    auto keymapFile = StandardPath::global().open(StandardPath::Type::PkgConfig, "lotus/keymap.txt", O_RDONLY);
+#endif
     if (keymapFile.isValid()) {
         list_ = UkLoadKeyOrderMap(keymapFile.fd());
     } else {
@@ -184,9 +191,15 @@ void KeymapModel::load() {
 }
 
 void KeymapModel::save() {
+#if LOTUS_USE_MODERN_FCITX_API
     StandardPaths::global().safeSave(StandardPathsType::PkgConfig,
                                      "lotus/keymap.txt",
                                      [this](int fd) { return saveToFd(fd); });
+#else
+    StandardPath::global().safeSave(StandardPath::Type::PkgConfig,
+                                    "lotus/keymap.txt",
+                                    [this](int fd) { return saveToFd(fd); });
+#endif
     setNeedSave(false);
 }
 
@@ -207,9 +220,15 @@ void KeymapModel::save(const QString &file) {
     if (!file.startsWith("/")) {
         return;
     }
+#if LOTUS_USE_MODERN_FCITX_API
     StandardPaths::global().safeSave(StandardPathsType::PkgConfig,
                                      file.toLocal8Bit().constData(),
                                      [this](int fd) { return saveToFd(fd); });
+#else
+    StandardPath::global().safeSave(StandardPathsType::PkgConfig,
+                                     file.toLocal8Bit().constData(),
+                                     [this](int fd) { return saveToFd(fd); });
+#endif
     setNeedSave(false);
 }
 
