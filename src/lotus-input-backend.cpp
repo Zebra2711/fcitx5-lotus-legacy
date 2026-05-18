@@ -84,6 +84,11 @@ namespace fcitx {
             }
             bool processKeyEventAndPull(uint32_t sym, uint32_t state, std::string* commit, std::string* preedit) override {
                 pendingPullCommit_.clear();
+                if (sym == FcitxKey_Multi_key || sym == FcitxKey_Menu) {
+                    if (commit) commit->clear();
+                    if (preedit) *preedit = preeditStr_;
+                    return false; // not processed → caller will forward
+                }
                 bool ok = dispatch(sym, state);
                 if (commit) *commit = pendingPullCommit_;
                 if (preedit) *preedit = preeditStr_;
