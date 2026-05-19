@@ -54,6 +54,65 @@ namespace fcitx {
                      : [target] "r"(target)
                      : "memory");
     }
+
+    inline void LogTextInputCapabilities(InputContext* ic)
+    {
+        assert(ic);
+        const auto flags = ic->capabilityFlags();
+        LOTUS_INFO("---- CapabilityFlags Dump ----");
+        struct Entry {
+            CapabilityFlag flag;
+            const char* name;
+        };
+        static constexpr Entry entries[] = {
+            {CapabilityFlag::Digit, "CapabilityFlag::Digit"},
+            {CapabilityFlag::Password, "CapabilityFlag::Password"},
+            {CapabilityFlag::WordCompletion, "CapabilityFlag::WordCompletion"},
+            {CapabilityFlag::SpellCheck, "CapabilityFlag::SpellCheck"},
+            {CapabilityFlag::UppercaseWords, "CapabilityFlag::UppercaseWords"},
+            {CapabilityFlag::Lowercase, "CapabilityFlag::Lowercase"},
+            {CapabilityFlag::Uppercase, "CapabilityFlag::Uppercase"},
+            {CapabilityFlag::Sensitive, "CapabilityFlag::Sensitive"},
+            {CapabilityFlag::Alpha, "CapabilityFlag::Alpha"},
+            {CapabilityFlag::Multiline, "CapabilityFlag::Multiline"},
+            {CapabilityFlag::Number, "CapabilityFlag::Number"},
+            {CapabilityFlag::Dialable, "CapabilityFlag::Dialable"},
+            {CapabilityFlag::Url, "CapabilityFlag::Url"},
+            {CapabilityFlag::Email, "CapabilityFlag::Email"},
+            {CapabilityFlag::Name, "CapabilityFlag::Name"},
+            {CapabilityFlag::Date, "CapabilityFlag::Date"},
+            {CapabilityFlag::Time, "CapabilityFlag::Time"},
+            {CapabilityFlag::Terminal, "CapabilityFlag::Terminal"},
+            {CapabilityFlag::SurroundingText, "CapabilityFlag::SurroundingText"},
+            {CapabilityFlag::Disable, "CapabilityFlag::Disable"},
+            {CapabilityFlag::ClientUnfocusCommit, "CapabilityFlag::ClientUnfocusCommit"},
+            {CapabilityFlag::KeyEventOrderFix, "CapabilityFlag::KeyEventOrderFix"},
+            {CapabilityFlag::Preedit, "CapabilityFlag::Preedit"},
+            {CapabilityFlag::FormattedPreedit, "CapabilityFlag::FormattedPreedit"},
+            {CapabilityFlag::CommitStringWithCursor, "CapabilityFlag::CommitStringWithCursor"},
+            {CapabilityFlag::ClientSideUI, "CapabilityFlag::ClientSideUI"},
+            {CapabilityFlag::ClientSideInputPanel, "CapabilityFlag::ClientSideInputPanel"},
+            {CapabilityFlag::RelativeRect, "CapabilityFlag::RelativeRect"},
+            {CapabilityFlag::NoOnScreenKeyboard, "CapabilityFlag::NoOnScreenKeyboard"},
+            {CapabilityFlag::ReportKeyRepeat, "CapabilityFlag::ReportKeyRepeat"},
+            {CapabilityFlag::GetIMInfoOnFocus, "CapabilityFlag::GetIMInfoOnFocus"},
+            {CapabilityFlag::PasswordOrSensitive, "CapabilityFlag::PasswordOrSensitive"},
+            {CapabilityFlag::NoFlag, "CapabilityFlag::NoFlag"},
+            {CapabilityFlag::ClientSideControlState, "CapabilityFlag::ClientSideControlState"},
+        };
+        constexpr std::size_t n = sizeof(entries) / sizeof(entries[0]);
+        for (std::size_t i = 0; i < n; ++i) {
+            if (flags.test(entries[i].flag))
+                LOTUS_INFO(entries[i].name);
+        }
+        const bool isPin =
+            flags.test(CapabilityFlag::Digit) &&
+            flags.test(CapabilityFlag::Password);
+        if (isPin)
+            LOTUS_INFO("Derived: PIN (Digit + Password)");
+
+        LOTUS_INFO("---- End Dump ----");
+    }
     LotusState::LotusState(LotusEngine* engine, InputContext* ic) : engine_(engine), ic_(ic) { setEngine(); }
     void LotusState::setEngine() {
         lotusEngine_.reset();
@@ -431,6 +490,23 @@ namespace fcitx {
         // đk đủ
         const bool B = surrounding.isValid()
                 && ic_->capabilityFlags().test(CapabilityFlag::SurroundingText);
+        const bool D0 = ic_->capabilityFlags().test(CapabilityFlag::WordCompletion);
+        if (D0)
+          LOTUS_INFO("CapabilityFlag::WordCompletion");
+        const bool D1 = ic_->capabilityFlags().test(CapabilityFlag::Password);
+        if (D1)
+          LOTUS_INFO("CapabilityFlag::Password");
+        const bool D2 = ic_->capabilityFlags().test(CapabilityFlag::Url);
+        if (D2)
+          LOTUS_INFO("CapabilityFlag::Url");
+        const bool D3 = ic_->capabilityFlags().test(CapabilityFlag::Digit);
+        if (D3 && D2)
+          LOTUS_INFO("ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PIN");
+        const bool D4 = ic_->capabilityFlags().test(CapabilityFlag::Terminal);
+        if (D4)
+          LOTUS_INFO("CapabilityFlag::Terminal");
+
+
        // blocker: some shjt edge case
         const bool C = !surrounding.text().empty()
                 && surrounding.text().back() != '\n' // firefox and discord insert '\n' into surr cause bug
@@ -465,7 +541,7 @@ namespace fcitx {
             ic_->commitString(addedPart);
             return true;
         } else {
-            if (isTerm || expected_backspaces_ == 2) {
+            if ((isTerm || D4) || expected_backspaces_ == 2) {
                 send_backspace_forward(expected_backspaces_ - 1);
                 LOTUS_INFO("Send " + std::to_string(expected_backspaces_ - 1) +"BS (NO UINPUT)");
                 ic_->commitString(addedPart);
@@ -474,15 +550,24 @@ namespace fcitx {
             }
             // bushjt app/web that do shjt thing with surroundingText support
             // cause focus out and invalid surr some edge case
-            // set fallback to Preedit in this case
-            if (A && !B) {
-              ;
-              //send_backspace_forward(expected_backspaces_ - 1);
-              //ic_->inputPanel().setClientPreedit(Text(addedPart));
-              //ic_->inputPanel().reset();
-              //ic_->updatePreedit();
-              //ic_->updateUserInterface(UserInterfaceComponent::InputPanel);
-              //return true;
+            // HACK: set fallback to Preedit in this case
+            if ( A && !B) {
+                //send_backspace_forward(expected_backspaces_ - 1);
+                is_deleting_.store(true, std::memory_order_release);
+                send_backspace_uinput(expected_backspaces_);
+                ic_->inputPanel().reset();
+                if (!addedPart.empty()) {
+                    Text t(addedPart, TextFormatFlag::Underline);
+                    t.setCursor(static_cast<int>(t.textLength()));
+                    if (ic_->capabilityFlags().test(CapabilityFlag::Preedit))
+                        ic_->inputPanel().setClientPreedit(t);
+                    else
+                        ic_->inputPanel().setPreedit(t);
+                }
+                ic_->updatePreedit();
+                ic_->updateUserInterface(UserInterfaceComponent::InputPanel);
+                expected_backspaces_ = 0;
+                return true;
             }
             is_deleting_.store(true, std::memory_order_release);
             send_backspace_uinput(expected_backspaces_);
@@ -492,7 +577,7 @@ namespace fcitx {
         return false;
     }
     bool LotusState::checkForwardSpecialKey(KeyEvent& keyEvent, KeySym& currentSym) {
-        if (keyEvent.key().isCursorMove() || currentSym == FcitxKey_Tab || currentSym == FcitxKey_KP_Tab || currentSym == FcitxKey_ISO_Left_Tab || currentSym == FcitxKey_Escape ||
+        if (keyEvent.key().isCursorMove() || currentSym == FcitxKey_Tab || currentSym == FcitxKey_KP_Tab || currentSym == FcitxKey_ISO_Left_Tab || currentSym == FcitxKey_Escape || currentSym == FcitxKey_Multi_key || currentSym == FcitxKey_Menu ||
             keyEvent.key().hasModifier()) {
             finishReplacement();
             hasHistory_ = false;
@@ -519,6 +604,7 @@ namespace fcitx {
         return false;
     }
     void LotusState::handleUinputMode(KeyEvent& keyEvent, KeySym currentSym) {
+        LogTextInputCapabilities(ic_);
         if (checkForwardSpecialKey(keyEvent, currentSym)) {
             keyEvent.forward();
             return;

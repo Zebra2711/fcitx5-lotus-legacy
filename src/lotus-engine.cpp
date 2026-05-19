@@ -33,15 +33,18 @@ namespace fcitx {
           bool needsSetup(InputContext* ic, LotusMode mode) {
               auto*  group = ic->focusGroup();
               ICUUID uuid  = ic->uuid();
-              if (group == lastGroup_ && uuid == lastUUID_ && mode == lastMode_) return false;
-              lastGroup_ = group; lastUUID_ = uuid; lastMode_ = mode;
+              bool focused = ic->hasFocus();
+              if (group == lastGroup_ && uuid == lastUUID_ && mode == lastMode_ && focused == lastFocused_) return false;
+              lastGroup_ = group; lastUUID_ = uuid; lastMode_ = mode; lastFocused_ = focused;
               return true;
           }
-          void invalidate() { lastGroup_ = nullptr; }
+          void invalidate() { lastGroup_ = nullptr; lastUUID_ = {};
+          lastFocused_ = false;}
       private:
           FocusGroup* lastGroup_ = nullptr;
           ICUUID      lastUUID_  = {};
           LotusMode   lastMode_  = LotusMode::NoMode;
+          bool        lastFocused_ = false;
     };
     static AppActivationCache s_activationCache;
     // Returns the KeySym that triggers the "Type hotkey char" action in the mode menu.
