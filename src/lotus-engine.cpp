@@ -207,7 +207,7 @@ if (!alreadySetup) {
         state->wa_flag  = false;
         state->surrtp   = false;
         state->wa_ff = 5;
-        bool prevAck = state->waitAck_;
+        //bool prevAck = state->waitAck_;
         state->waitAck_ = false;
         if (*config_.fixUinputWithAck) {
             if (targetMode == LotusMode::Uinput || targetMode == LotusMode::Minecraft || targetMode == LotusMode::Smooth) {
@@ -256,10 +256,11 @@ if (!alreadySetup) {
                 }
             }
         }
+        /*seem like firefox not case it anymore
         if (prevAck != state->waitAck_ && !state->waitAck_ && uinput_client_fd_>=0) {
             char drain[64];
             recv(uinput_client_fd_,drain,sizeof(drain),MSG_DONTWAIT | MSG_NOSIGNAL);
-        }
+        }*/
         if (event.type() == EventType::InputContextFocusIn && is_dbus && !surrvalid) {
             LOTUS_INFO("Skip clearAllBuffers");
         } else if (surrvalid && !state->oldPreBuffer_.empty() && (now_ms() - state->lastDeactivateTime_) < 100) {

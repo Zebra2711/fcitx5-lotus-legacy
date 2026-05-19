@@ -27,6 +27,7 @@
 #include <sys/un.h>
 #include <thread>
 #include <linux/input.h>
+#include <poll.h>
 
 namespace fcitx {
     constexpr int      MAX_SCAN_LENGTH = 15;
@@ -127,11 +128,21 @@ namespace fcitx {
     bool LotusState::connect_uinput_server() {
         if (uinput_client_fd_ >= 0) return true;
         const std::string current_path = KB_SOCKET_NAME;
-        int               current_fd   = socket(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0);
+        int current_fd = socket(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0);
         if (current_fd < 0) {
             LOTUS_ERROR("Failed to create socket: " + std::string(strerror(errno)));
             return false;
         }
+        /* bind to PID-based abstract address so server can sendto ack back */
+        struct sockaddr_un local{};
+        local.sun_family = AF_UNIX;
+        char ack_name[32];
+        snprintf(ack_name, sizeof(ack_name), "lotus-ack-%d", getpid());
+        size_t alen = strlen(ack_name);
+        local.sun_path[0] = '\0';
+        memcpy(&local.sun_path[1], ack_name, alen);
+        bind(current_fd, (struct sockaddr *)&local,
+             (socklen_t)(offsetof(struct sockaddr_un, sun_path) + 1 + alen));
         struct sockaddr_un addr{};
         addr.sun_family = AF_UNIX;
         addr.sun_path[0] = '\0';
@@ -153,24 +164,38 @@ namespace fcitx {
             return;
         }
         struct input_event ev[4] = {
-            {.type = EV_KEY, .code = KEY_BACKSPACE, .value = 1},
-            {.type = EV_SYN, .code = SYN_REPORT,   .value = 0},
-            {.type = EV_KEY, .code = KEY_BACKSPACE, .value = 0},
-            {.type = EV_SYN, .code = SYN_REPORT,   .value = 0},
+            {.time = {}, .type = EV_KEY, .code = KEY_BACKSPACE, .value = 1},
+            {.time = {}, .type = EV_SYN, .code = SYN_REPORT,   .value = 0},
+            {.time = {}, .type = EV_KEY, .code = KEY_BACKSPACE, .value = 0},
+            {.time = {}, .type = EV_SYN, .code = SYN_REPORT,   .value = 0},
         };
-        bool ok = true;
-        for (int i = 0; i < count && ok; ++i) {
-            ssize_t n = send(uinput_client_fd_, ev, sizeof(ev), MSG_NOSIGNAL);
-            if (n < 0) {
-                LOTUS_WARN("Failed to send backspace: " + std::string(strerror(errno)));
-                int old_fd = uinput_client_fd_.exchange(-1);
-                if (old_fd != -1) close(old_fd);
-                if (connect_uinput_server())
-                    send(uinput_client_fd_, ev, sizeof(ev), MSG_NOSIGNAL);
-                ok = false;
-            }
+        /* send all N BS as one datagram so server can ack the whole batch */
+        std::vector<struct input_event> evs(static_cast<size_t>(count) * 4, ev[0]);
+        for (int i = 0; i < count; i++) {
+            evs[i*4+0] = ev[0]; evs[i*4+1] = ev[1];
+            evs[i*4+2] = ev[2]; evs[i*4+3] = ev[3];
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(wa_ff * count));
+        ssize_t n = send(uinput_client_fd_, evs.data(),
+                         evs.size() * sizeof(struct input_event), MSG_NOSIGNAL);
+        if (n < 0) {
+            LOTUS_WARN("Failed to send backspace: " + std::string(strerror(errno)));
+            int old_fd = uinput_client_fd_.exchange(-1);
+            if (old_fd != -1) close(old_fd);
+            if (connect_uinput_server())
+                send(uinput_client_fd_, evs.data(),
+                     evs.size() * sizeof(struct input_event), MSG_NOSIGNAL);
+        }
+        if (waitAck_) {
+            int raw_fd = uinput_client_fd_.load(std::memory_order_acquire);
+            struct pollfd pfd{raw_fd, POLLIN, 0};
+            if (poll(&pfd, 1, 200) > 0) {
+                char ack;
+                recv(raw_fd, &ack, 1, 0);
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        } else {
+            std::this_thread::sleep_for(std::chrono::milliseconds(wa_ff * count));
+        }
     }
     void LotusState::send_backspace_forward(int count) const {
         if (count <= 0) return;

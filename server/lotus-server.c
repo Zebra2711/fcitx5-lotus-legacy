@@ -132,14 +132,20 @@ int main(void) {
 
         /* KB: receive input_event, write to uinput */
         if (fds[0].revents & POLLIN) {
-            struct input_event buf[16];
-            ssize_t n = recv(kb_fd, buf, sizeof(buf), 0);
+            struct input_event buf[64];
+            struct sockaddr_un client_addr;
+            socklen_t clen = sizeof(client_addr);
+            ssize_t n = recvfrom(kb_fd, buf, sizeof(buf), 0,
+                                 (struct sockaddr *)&client_addr, &clen);
             if (n > 0 && n % (ssize_t)sizeof(struct input_event) == 0) {
                 int count = (int)(n / (ssize_t)sizeof(struct input_event));
                 for (int i = 0; i < count; i++) {
                     ssize_t w = write(uinput_fd, &buf[i], sizeof(buf[i]));
                     (void)w;
                 }
+                /* ack: only reaches client if it bound a return address */
+                sendto(kb_fd, "A", 1, MSG_DONTWAIT,
+                       (struct sockaddr *)&client_addr, clen);
             }
         }
 
