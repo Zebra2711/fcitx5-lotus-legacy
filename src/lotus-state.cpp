@@ -26,6 +26,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <thread>
+#include <linux/input.h>
+
 namespace fcitx {
     constexpr int      MAX_SCAN_LENGTH = 15;
     static inline bool isWordBreak(uint32_t ucs4) {
@@ -124,8 +126,8 @@ namespace fcitx {
     void LotusState::setOption() { if (!lotusEngine_) return; lotusEngine_->setOptions(engine_); }
     bool LotusState::connect_uinput_server() {
         if (uinput_client_fd_ >= 0) return true;
-        const std::string current_path = buildSocketPath("kb_socket");
-        int               current_fd   = socket(AF_UNIX, SOCK_SEQPACKET | SOCK_NONBLOCK, 0);
+        const std::string current_path = KB_SOCKET_NAME;
+        int               current_fd   = socket(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0);
         if (current_fd < 0) {
             LOTUS_ERROR("Failed to create socket: " + std::string(strerror(errno)));
             return false;
@@ -150,30 +152,25 @@ namespace fcitx {
             LOTUS_ERROR("Cannot send backspace since cannot connect to uinput server");
             return;
         }
-        ssize_t n = send(uinput_client_fd_, &count, sizeof(count), MSG_NOSIGNAL);
-        if (n < 0) {
-            LOTUS_WARN("Failed to send backspace: " + std::string(strerror(errno)));
-            int old_fd = uinput_client_fd_.exchange(-1);
-            if (old_fd != -1) close(old_fd);
-            if (connect_uinput_server()) {
-                LOTUS_INFO("Reconnected to uinput server successfully");
-                send(uinput_client_fd_, &count, sizeof(count), MSG_NOSIGNAL);
+        struct input_event ev[4] = {
+            {.type = EV_KEY, .code = KEY_BACKSPACE, .value = 1},
+            {.type = EV_SYN, .code = SYN_REPORT,   .value = 0},
+            {.type = EV_KEY, .code = KEY_BACKSPACE, .value = 0},
+            {.type = EV_SYN, .code = SYN_REPORT,   .value = 0},
+        };
+        bool ok = true;
+        for (int i = 0; i < count && ok; ++i) {
+            ssize_t n = send(uinput_client_fd_, ev, sizeof(ev), MSG_NOSIGNAL);
+            if (n < 0) {
+                LOTUS_WARN("Failed to send backspace: " + std::string(strerror(errno)));
+                int old_fd = uinput_client_fd_.exchange(-1);
+                if (old_fd != -1) close(old_fd);
+                if (connect_uinput_server())
+                    send(uinput_client_fd_, ev, sizeof(ev), MSG_NOSIGNAL);
+                ok = false;
             }
         }
-        //HACK
-        if (waitAck_) {
-            LOTUS_INFO("Waiting for ack");
-            LOTUS_INFO("chrome x11 hit me");
-            char ack;
-            recv(uinput_client_fd_, &ack, sizeof(ack), MSG_NOSIGNAL);
-            // keep safe that bs is finish by app
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            // ez way but cause alot of problem
-            //std::this_thread::sleep_for(std::chrono::milliseconds(count * 5));
-        } else {
-            LOTUS_INFO("firefox hit me");
-            std::this_thread::sleep_for(std::chrono::milliseconds(wa_ff*count));
-        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(wa_ff * count));
     }
     void LotusState::send_backspace_forward(int count) const {
         if (count <= 0) return;

@@ -46,7 +46,8 @@ extern "C" size_t strfind_avx512(const char* hay, size_t hlen, const char* needl
 #define UNIX_PATH_MAX sizeof(((struct sockaddr_un*)0)->sun_path)
 
 FCITX_DECLARE_LOG_CATEGORY(lotus);
-
+#define KB_SOCKET_NAME    "lotussocket-kb_socket"
+#define MOUSE_SOCKET_NAME "lotussocket-mouse_socket"
 #if defined(LOTUS_ENABLE_LOG)
 #define LOTUS_DEBUG(msg) FCITX_LOGC(lotus, Debug) << "[DEBUG] " << msg
 #define LOTUS_INFO(msg)  FCITX_LOGC(lotus, Info) << "[INFO] " << msg

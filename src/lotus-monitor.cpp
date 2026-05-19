@@ -22,7 +22,7 @@
 std::thread mouse_thread = std::thread();
 //
 void mousePressResetThread() {
-    const std::string mouse_socket_path = buildSocketPath("mouse_socket");
+    const std::string mouse_socket_path = MOUSE_SOCKET_NAME;
     LOTUS_INFO("Mouse press reset thread started.");
 
     while (!stop_flag_monitor.load(std::memory_order_acquire)) {
