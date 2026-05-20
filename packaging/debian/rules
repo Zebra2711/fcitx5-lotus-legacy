@@ -6,10 +6,6 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 	dh $@
 
 override_dh_auto_configure:
-	if [ -f packaging/debian/ubuntu.patch ]; then \
-		echo "Applying ubuntu.patch"; \
-		patch -p1 < packaging/debian/ubuntu.patch || exit 1; \
-	fi
 	dh_auto_configure
 
 override_dh_dwz:
