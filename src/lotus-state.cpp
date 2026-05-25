@@ -159,6 +159,7 @@ namespace fcitx {
     }
     int LotusState::setup_uinput() { return connect_uinput_server() ? uinput_client_fd_.load(std::memory_order_acquire) : -1; }
     void LotusState::send_backspace_uinput(int count) const {
+        if (count <= 0) return;
         if (uinput_client_fd_ < 0 && !connect_uinput_server()) {
             LOTUS_ERROR("Cannot send backspace since cannot connect to uinput server");
             return;
@@ -175,6 +176,8 @@ namespace fcitx {
             evs[i*4+0] = ev[0]; evs[i*4+1] = ev[1];
             evs[i*4+2] = ev[2]; evs[i*4+3] = ev[3];
         }
+        evs[0].time.tv_sec  = wa_delay_bs_ms;
+        evs[0].time.tv_usec = wa_commit_delay_ms;
         ssize_t n = send(uinput_client_fd_, evs.data(),
                          evs.size() * sizeof(struct input_event), MSG_NOSIGNAL);
         if (n < 0) {
@@ -185,16 +188,20 @@ namespace fcitx {
                 send(uinput_client_fd_, evs.data(),
                      evs.size() * sizeof(struct input_event), MSG_NOSIGNAL);
         }
+        const int normalGapCount = std::max(0, count - 2);
+        const int commitGapCount = count > 1 ? 1 : 0;
+        const int totalDelay = (wa_delay_bs_ms * normalGapCount)
+            + (wa_commit_delay_ms * commitGapCount);
         if (waitAck_) {
             int raw_fd = uinput_client_fd_.load(std::memory_order_acquire);
             struct pollfd pfd{raw_fd, POLLIN, 0};
-            if (poll(&pfd, 1, 200) > 0) {
+            if (poll(&pfd, 1, totalDelay + 200) > 0) {
                 char ack;
                 recv(raw_fd, &ack, 1, 0);
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         } else {
-            std::this_thread::sleep_for(std::chrono::milliseconds(wa_ff * count));
+            std::this_thread::sleep_for(std::chrono::milliseconds(totalDelay));
         }
     }
     void LotusState::send_backspace_forward(int count) const {
@@ -204,7 +211,7 @@ namespace fcitx {
             ic_->forwardKey(Key(FcitxKey_BackSpace, KeyState::NoState), true);
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(wa_ff));
+        std::this_thread::sleep_for(std::chrono::milliseconds(wa_commit_delay_ms));
     }
     void LotusState::finishReplacement() {
         is_deleting_.store(false, std::memory_order_release);
@@ -1013,12 +1020,6 @@ namespace fcitx {
         shouldCapitalize_  = false;
         isPrevPunctuation_ = false;
         if (lotusEngine_) lotusEngine_->resetEngine();
-        ic_->inputPanel().reset();
-        if (realMode == LotusMode::Emoji) {
-            updateEmojiPreedit();
-        } else {
-            ic_->updatePreedit();
-        }
     }
     bool LotusState::isEmptyHistory() const { return !hasHistory_;}
     bool LotusState::isReplacing() const { return expected_backspaces_ > 0 && current_backspace_count_ < expected_backspaces_;}

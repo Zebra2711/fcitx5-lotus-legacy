@@ -206,7 +206,8 @@ if (!alreadySetup) {
         state->isTerm = false;
         state->wa_flag  = false;
         state->surrtp   = false;
-        state->wa_ff = 5;
+        state->wa_delay_bs_ms     = 5;
+        state->wa_commit_delay_ms = 5;
         //bool prevAck = state->waitAck_;
         state->waitAck_ = false;
         if (*config_.fixUinputWithAck) {
@@ -225,8 +226,11 @@ if (!alreadySetup) {
 #endif
                 for (const auto& cfg : app_delay_configs) {
                     if (contains(cfg.name)) {
-                        state->wa_ff = cfg.commit_delay_ms;
-                        LOTUS_INFO(std::to_string(state->wa_ff) + "(ms/BS) delay");
+                        state->wa_delay_bs_ms     = cfg.delay_bs;
+                        state->wa_commit_delay_ms = cfg.commit_delay_ms;
+                        LOTUS_INFO(std::to_string(state->wa_delay_bs_ms)
+                            + "ms/BS, " + std::to_string(state->wa_commit_delay_ms)
+                            + "ms commit delay");
                         break;
                     }
                 }

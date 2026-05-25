@@ -94,16 +94,21 @@ inline constexpr std::array<std::string_view, 5> terminalm = {
 
 struct AppDelayConfig {
     std::string_view name;
+    int delay_bs;
     int commit_delay_ms;
 };
 
-inline constexpr std::array<AppDelayConfig, 8> app_delay_configs = {
-    AppDelayConfig{"firefox",  7},
-    AppDelayConfig{"mullvad",  7},
-    AppDelayConfig{"zen",      7},
-    AppDelayConfig{"waterfox", 7},
-    AppDelayConfig{"brave",    1},
-    AppDelayConfig{"chromium", 1},
-    AppDelayConfig{"vesktop",  1},
-    AppDelayConfig{"wps",      10},
+inline constexpr std::array<AppDelayConfig, 12> app_delay_configs = {
+    AppDelayConfig{"firefox",   2,  7},
+    AppDelayConfig{"mullvad",   2, 20},
+    AppDelayConfig{"zen",       2,  7},
+    AppDelayConfig{"waterfox",  2,  7},
+    AppDelayConfig{"brave",     2,  5},
+    AppDelayConfig{"chromium",  2,  1},
+    AppDelayConfig{"vesktop",   2, 10},
+    AppDelayConfig{"wps",       3, 20},
+    AppDelayConfig{"vivaldi",   2,  1},
+    AppDelayConfig{"opera",     2,  1},
+    AppDelayConfig{"yandex",    2,  1},
+    AppDelayConfig{"edge",      2,  1},
 };

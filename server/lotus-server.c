@@ -87,6 +87,45 @@ static int uinput_init(void) {
     return fd;
 }
 
+static bool is_backspace_packet(const struct input_event *buf, int count) {
+    if (count <= 0 || count % 4 != 0) return false;
+    for (int i = 0; i < count; i += 4) {
+        if (buf[i].type != EV_KEY || buf[i].code != KEY_BACKSPACE || buf[i].value != 1 ||
+            buf[i + 1].type != EV_SYN || buf[i + 1].code != SYN_REPORT ||
+            buf[i + 2].type != EV_KEY || buf[i + 2].code != KEY_BACKSPACE || buf[i + 2].value != 0 ||
+            buf[i + 3].type != EV_SYN || buf[i + 3].code != SYN_REPORT) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static void sleep_ms(int delay_ms) {
+    if (delay_ms <= 0) return;
+    usleep((useconds_t)delay_ms * 1000);
+}
+
+static void write_backspace_packet(int uinput_fd, struct input_event *buf, int count) {
+    int delay_bs_ms = (int)buf[0].time.tv_sec;
+    int commit_delay_ms = (int)buf[0].time.tv_usec;
+    int bs_count = count / 4;
+
+    for (int i = 0; i < count; i++) {
+        buf[i].time.tv_sec = 0;
+        buf[i].time.tv_usec = 0;
+    }
+
+    for (int bs = 0; bs < bs_count; bs++) {
+        for (int i = bs * 4; i < (bs + 1) * 4; i++) {
+            ssize_t w = write(uinput_fd, &buf[i], sizeof(buf[i]));
+            (void)w;
+        }
+        if (bs + 1 < bs_count) {
+            sleep_ms((bs + 2 == bs_count) ? commit_delay_ms : delay_bs_ms);
+        }
+    }
+}
+
 int main(void) {
     struct sigaction sa = {};
     sa.sa_handler = signal_handler;
@@ -136,9 +175,13 @@ int main(void) {
                                  (struct sockaddr *)&client_addr, &clen);
             if (n > 0 && n % (ssize_t)sizeof(struct input_event) == 0) {
                 int count = (int)(n / (ssize_t)sizeof(struct input_event));
-                for (int i = 0; i < count; i++) {
-                    ssize_t w = write(uinput_fd, &buf[i], sizeof(buf[i]));
-                    (void)w;
+                if (is_backspace_packet(buf, count)) {
+                    write_backspace_packet(uinput_fd, buf, count);
+                } else {
+                    for (int i = 0; i < count; i++) {
+                        ssize_t w = write(uinput_fd, &buf[i], sizeof(buf[i]));
+                        (void)w;
+                    }
                 }
                 /* ack: only reaches client if it bound a return address */
                 sendto(kb_fd, "A", 1, MSG_DONTWAIT,
