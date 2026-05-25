@@ -17,7 +17,8 @@
 #include <thread>
 
 extern std::thread mouse_thread;
-
+extern std::atomic<int> g_current_lotus_mode;
+inline bool modeUsesUinput(int m) { return m >= 1 && m <= 3; } // Smooth/Slow/Minecraft only
 /**
  * @brief Thread function for mouse press detection and reset.
  *

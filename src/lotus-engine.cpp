@@ -630,6 +630,7 @@ if (!alreadySetup) {
     }
     void LotusEngine::setMode(LotusMode mode, InputContext* ic) {
         realMode = mode;
+        g_current_lotus_mode.store(static_cast<int>(mode), std::memory_order_release);
         if (ic != nullptr && ic->hasFocus()) { ic->updateUserInterface(UserInterfaceComponent::StatusArea);}
     }
     std::string LotusEngine::subModeIconImpl(const InputMethodEntry& /*entry*/, InputContext& /*inputContext*/) {

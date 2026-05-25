@@ -213,6 +213,10 @@ namespace fcitx {
         pending_commit_string_.clear();
         buffered_keys_.clear();
     }
+    bool LotusState::isSimpleTelexInputMethod() const {
+        const auto& inputMethod = engine_->config().inputMethod.value();
+        return inputMethod == "Telex" || inputMethod == "Telex 2";
+    }
     bool LotusState::isAutofillCertain(const SurroundingText& s) {
         if (!s.isValid() || oldPreBuffer_.empty()) return false;
         const unsigned int cursor  = s.cursor();
@@ -512,6 +516,9 @@ namespace fcitx {
         // đk đủ
         const bool B = surrounding.isValid()
                 && ic_->capabilityFlags().test(CapabilityFlag::SurroundingText);
+
+        // check?
+        /*
         const bool D0 = ic_->capabilityFlags().test(CapabilityFlag::WordCompletion);
         if (D0)
           LOTUS_INFO("CapabilityFlag::WordCompletion");
@@ -524,6 +531,7 @@ namespace fcitx {
         const bool D3 = ic_->capabilityFlags().test(CapabilityFlag::Digit);
         if (D3 && D2)
           LOTUS_INFO("ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PIN");
+        */
         const bool D4 = ic_->capabilityFlags().test(CapabilityFlag::Terminal);
         if (D4)
           LOTUS_INFO("CapabilityFlag::Terminal");
@@ -563,7 +571,10 @@ namespace fcitx {
             ic_->commitString(addedPart);
             return true;
         } else {
-            if ((isTerm || D4) || expected_backspaces_ == 2) {
+            // if is Term and only need del 1 char try use new method to sent BS
+            // but it till cause bug that del to fast.
+            //      IS TERM?              DEL 1 CHAR (cause bug so just nuke)
+            if ((isTerm || D4) || (expected_backspaces_ == 2 && 0 )) {
                 send_backspace_forward(expected_backspaces_ - 1);
                 LOTUS_INFO("Send " + std::to_string(expected_backspaces_ - 1) +"BS (NO UINPUT)");
                 ic_->commitString(addedPart);
@@ -572,7 +583,9 @@ namespace fcitx {
             }
             // bushjt app/web that do shjt thing with surroundingText support
             // cause focus out and invalid surr some edge case
-            // HACK: set fallback to Preedit in this case
+            // HACK: set fallback to Preedit in this case but hell yeah, how
+            // to do this way without face to other problem?
+            /*
             if ( A && !B) {
                 //send_backspace_forward(expected_backspaces_ - 1);
                 is_deleting_.store(true, std::memory_order_release);
@@ -590,7 +603,7 @@ namespace fcitx {
                 ic_->updateUserInterface(UserInterfaceComponent::InputPanel);
                 expected_backspaces_ = 0;
                 return true;
-            }
+            }*/
             is_deleting_.store(true, std::memory_order_release);
             send_backspace_uinput(expected_backspaces_);
             LOTUS_INFO("Send " + std::to_string(expected_backspaces_ - 1 - autofillOffset) + " backspaces + 1 trigger");
@@ -609,6 +622,13 @@ namespace fcitx {
         }
         if (currentSym == FcitxKey_Delete) return true;
         if (currentSym >= FcitxKey_KP_0 && currentSym <= FcitxKey_KP_9) {
+            if (isSimpleTelexInputMethod() || ic_->capabilityFlags().test(CapabilityFlag::Password)) {
+                finishReplacement();
+                hasHistory_ = false;
+                lotusEngine_->resetEngine();
+                oldPreBuffer_.clear();
+                return true;
+            }
             currentSym = static_cast<KeySym>(FcitxKey_0 + (currentSym - FcitxKey_KP_0));
             return false;
         }
@@ -698,7 +718,7 @@ namespace fcitx {
         std::string preeditStr = preeditStrBuf;
         std::string deletedPart;
         std::string addedPart;
-        wa_flag = false;
+        wa_flag = false; // too bad
         if (wa_flag) keyEvent.filterAndAccept();
         if (compareAndSplitStrings(oldPreBuffer_, preeditStr, deletedPart, addedPart) != 0) {
             if (deletedPart.empty()) {
@@ -840,7 +860,7 @@ namespace fcitx {
                 break;
             }
         }
-        if (*engine_->config().autoCapitalizeAfterPunctuation) {
+        if (*engine_->config().capitalizeMacro) {
             isPrevPunctuation_ = true;
             shouldCapitalize_  = true;
         }
@@ -870,7 +890,7 @@ namespace fcitx {
             clearAllBuffers();
         }
         KeySym currentSym = keyEvent.rawKey().sym();
-        if (*engine_->config().autoCapitalizeAfterPunctuation && realMode != LotusMode::Off) {
+        if (*engine_->config().capitalizeMacro && realMode != LotusMode::Off) {
             // Ignore auto-capitalize side-effects if we're processing automated replacement backspaces
             bool isAutomatedBackspace = is_deleting_.load(std::memory_order_acquire) && isBackspace(currentSym);
             if (!isAutomatedBackspace) {
@@ -993,6 +1013,12 @@ namespace fcitx {
         shouldCapitalize_  = false;
         isPrevPunctuation_ = false;
         if (lotusEngine_) lotusEngine_->resetEngine();
+        ic_->inputPanel().reset();
+        if (realMode == LotusMode::Emoji) {
+            updateEmojiPreedit();
+        } else {
+            ic_->updatePreedit();
+        }
     }
     bool LotusState::isEmptyHistory() const { return !hasHistory_;}
     bool LotusState::isReplacing() const { return expected_backspaces_ > 0 && current_backspace_count_ < expected_backspaces_;}

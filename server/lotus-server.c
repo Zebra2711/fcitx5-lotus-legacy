@@ -94,11 +94,8 @@ int main(void) {
     sigaction(SIGTERM, &sa, NULL);
     sigaction(SIGINT,  &sa, NULL);
 
-    setpriority(PRIO_PROCESS, 0, -10);
-    cpu_set_t cpuset;
-    CPU_ZERO(&cpuset);
-    for (int i = 0; i <= 3; ++i) CPU_SET(i, &cpuset);
-    sched_setaffinity(0, sizeof(cpuset), &cpuset);
+    struct sched_param sp = { .sched_priority = 10 };
+    sched_setscheduler(0, SCHED_FIFO, &sp);
 
     int uinput_fd = uinput_init();
     if (uinput_fd < 0) { perror("uinput_init"); return 1; }

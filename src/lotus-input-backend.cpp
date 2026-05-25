@@ -128,6 +128,7 @@ namespace fcitx {
                 opt.freeMarking         = *engine->config().freeMarking ? 1 : 0;
                 opt.modernStyle         = *engine->config().modernStyle ? 1 : 0;
                 opt.macroEnabled        = *engine->config().enableMacro ? 1 : 0;
+                //opt.capitalizeMacro     = *engine->config().capitalizeMacro ? 1 : 0;
                 opt.useUnicodeClipboard = 0;
                 opt.alwaysMacro         = 0;
                 opt.strictSpellCheck    = 0;
@@ -138,9 +139,9 @@ namespace fcitx {
             }
             void reloadKeymap() {
 #if LOTUS_USE_MODERN_FCITX_API
-                auto keymapFile = StandardPaths::global().open(StandardPathsType::PkgConfig, "lotus/keymap.txt");
+                auto keymapFile = StandardPaths::global().open(StandardPathsType::PkgConfig, "lotus/custom_keymap");
 #else
-                auto keymapFile = StandardPath::global().open(StandardPath::Type::PkgConfig, "lotus/keymap.txt", O_RDONLY);
+                auto keymapFile = StandardPath::global().open(StandardPath::Type::PkgConfig, "lotus/custom_keymap", O_RDONLY);
 #endif
                 if (keymapFile.isValid()) {
                     UkLoadKeyMap(keymapFile.fd(), im_->sharedMem()->usrKeyMap);
