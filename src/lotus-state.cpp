@@ -779,6 +779,8 @@ namespace fcitx {
         }
         if (isBackspace(keyEvent.rawKey().sym())) {
             lotusEngine_->resetEngine();
+            hasHistory_ = false;
+            oldPreBuffer_.clear();
             keyEvent.forward();
             return;
         }
@@ -801,17 +803,23 @@ namespace fcitx {
                     while (prev != text.begin() && ((*prev & 0xC0) == 0x80)) { --prev;}
                 }
                 uint32_t ucs4 = utf8::getChar(prev, text.end());
-                if (isWordBreak(ucs4)) break;
+                if (isWordBreak(ucs4) || (ucs4 < 0x80 && !std::isalnum(static_cast<int>(ucs4)))) break;
                 startIter = prev;
                 ++scanCount;
             }
             std::string oldWord(startIter, endIter);
             if (oldWord.empty()) { processNormalKey(keyEvent, currentSym);return;}
-            lotusEngine_->rebuildFromText(oldWord.c_str());
+            const bool continuing = hasHistory_ && !oldPreBuffer_.empty() && oldWord == oldPreBuffer_;
+            if (!continuing) {
+                lotusEngine_->resetEngine();
+                lotusEngine_->rebuildFromText(oldWord.c_str());
+            }
             bool processed = lotusEngine_->processKeyEvent(currentSym, keyEvent.rawKey().states());
             if (!processed) {
                 keyEvent.forward();
                 lotusEngine_->resetEngine();
+                hasHistory_ = false;
+                oldPreBuffer_.clear();
                 return;
             }
             std::string commitPart;
@@ -820,11 +828,33 @@ namespace fcitx {
             std::string newWord;
             if (!commitPart.empty()) newWord += commitPart;
             if (!preeditPart.empty()) newWord += preeditPart;
+            {
+                const std::string keyStr = Key::keySymToUTF8(currentSym);
+                const std::string tail = newWord;
+                const size_t oldLen = utf8::length(oldWord);
+                const size_t tailLen = utf8::length(tail);
+                const bool appended = !keyStr.empty() && tail.size() >= keyStr.size() &&
+                                      tail.compare(tail.size() - keyStr.size(), keyStr.size(), keyStr) == 0;
+                const size_t total = oldLen + (appended ? 1 : 0);
+                const size_t keep = total > tailLen ? total - tailLen : 0;
+                if (keep > 0) {
+                    auto it = utf8::nextNChar(oldWord.cbegin(), keep);
+                    newWord = std::string(oldWord.cbegin(), it) + tail;
+                }
+            }
             std::string deletedPart;
             std::string addedPart;
             compareAndSplitStrings(oldWord, newWord, deletedPart, addedPart);
-            if (deletedPart.empty() && addedPart == keyEvent.key().toString()) {
-                lotusEngine_->resetEngine();
+            LOTUS_INFO("SURR old=[" + oldWord + "] commit=[" + commitPart + "] preedit=[" + preeditPart + "] del=[" + deletedPart + "] add=[" + addedPart + "] cursor=" + std::to_string(cursor) + " text=[" + text + "]");
+            if ((deletedPart.empty() || deletedPart == oldWord) && addedPart == Key::keySymToUTF8(currentSym)) {
+                if (!commitPart.empty()) {
+                    lotusEngine_->resetEngine();
+                    hasHistory_ = false;
+                    oldPreBuffer_.clear();
+                } else {
+                    hasHistory_ = true;
+                    oldPreBuffer_ = newWord;
+                }
                 keyEvent.forward();
                 return;
             }
@@ -833,7 +863,14 @@ namespace fcitx {
                 if (charsToDelete > 0) ic->deleteSurroundingText(-static_cast<int>(charsToDelete), static_cast<int>(charsToDelete));
                 if (!addedPart.empty()) {ic->commitString(addedPart);LOTUS_INFO("Commit: " + addedPart);}
             }
-            lotusEngine_->resetEngine();
+            if (!commitPart.empty()) {
+                lotusEngine_->resetEngine();
+                hasHistory_ = false;
+                oldPreBuffer_.clear();
+            } else {
+                hasHistory_ = true;
+                oldPreBuffer_ = newWord;
+            }
             keyEvent.filterAndAccept();
             return;
         }
