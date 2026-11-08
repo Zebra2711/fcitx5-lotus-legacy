@@ -41,8 +41,13 @@ namespace fcitx {
             return injecting_;
         }
         bool consumeEcho(uint32_t code, uint32_t time);
-        // Probes the current compositor once for zwp_virtual_keyboard_manager_v1.
+        // Probes the current compositor for zwp_virtual_keyboard_manager_v1. A
+        // failed probe is retried occasionally, because the compositor may not
+        // have been ready yet when the addon started.
         bool available();
+        // Probes again, ignoring a cached negative result. Used before warning
+        // about the uinput server, where a stale failure would be misleading.
+        bool probe();
 
         LotusVirtualKeyboard(const LotusVirtualKeyboard&)            = delete;
         LotusVirtualKeyboard& operator=(const LotusVirtualKeyboard&) = delete;
@@ -60,15 +65,16 @@ namespace fcitx {
         bool                                      emitImpl(int count, std::string_view utf8, bool trackEcho, bool shiftLeft);
         void                                      disconnect();
 
-        ::wl_display*                             display_   = nullptr;
-        ::wl_registry*                            registry_  = nullptr;
-        ::wl_seat*                                seat_      = nullptr;
-        ::zwp_virtual_keyboard_manager_v1*        manager_   = nullptr;
-        ::zwp_virtual_keyboard_v1*                keyboard_  = nullptr;
-        uint32_t                                  time_      = 1;
-        bool                                      injecting_ = false;
-        bool                                      probed_    = false;
-        bool                                      supported_ = false;
+        ::wl_display*                             display_     = nullptr;
+        ::wl_registry*                            registry_    = nullptr;
+        ::wl_seat*                                seat_        = nullptr;
+        ::zwp_virtual_keyboard_manager_v1*        manager_     = nullptr;
+        ::zwp_virtual_keyboard_v1*                keyboard_    = nullptr;
+        uint32_t                                  time_        = 1;
+        bool                                      injecting_   = false;
+        bool                                      probed_      = false;
+        bool                                      supported_   = false;
+        int64_t                                   lastProbeMs_ = 0;
         std::deque<std::pair<uint32_t, uint32_t>> echo_;
     };
 

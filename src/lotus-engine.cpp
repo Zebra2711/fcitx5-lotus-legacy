@@ -1131,7 +1131,16 @@ namespace fcitx {
     }
 
     void LotusEngine::checkServerForMode(LotusMode mode) {
-        if (isUinputMode(mode) && !LotusVirtualKeyboard::instance().available() && !kbSender_.ensureConnected()) {
+        if (!isUinputMode(mode)) {
+            return;
+        }
+        // The virtual keyboard replaces the uinput server. Re-probe here so a
+        // failure cached before the compositor was ready cannot trigger a
+        // misleading warning later.
+        if (LotusVirtualKeyboard::instance().probe()) {
+            return;
+        }
+        if (!kbSender_.ensureConnected()) {
             notifyMissingUinputServer();
         }
     }

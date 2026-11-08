@@ -8,6 +8,7 @@
 #include "lotus-notify.h"
 #include "lotus-log.h"
 #include "lotus-utils.h"
+#include "lotus-virtual-keyboard.h"
 
 #include <fcitx-utils/i18n.h>
 #include <libnotify/notify.h>
@@ -71,6 +72,11 @@ namespace {
 } // namespace
 
 void notifyMissingUinputServer() {
+    // Uinput modes work without the server when the compositor supports the
+    // virtual keyboard, so never warn in that case.
+    if (fcitx::LotusVirtualKeyboard::instance().available()) {
+        return;
+    }
     const int64_t now = nowMs();
     if (lastNotifyMs != 0 && now - lastNotifyMs < kNotifyCooldownMs) {
         return;

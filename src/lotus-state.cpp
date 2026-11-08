@@ -622,7 +622,7 @@ namespace fcitx {
                 return;
             }
             if (!vkDbus) {
-                const int         vkCount   = static_cast<int>(delSize) + (autofill ? 1 : 0);
+                const int         vkCount   = static_cast<int>(delSize) + ((currentMode() != LotusMode::SuperSmooth && autofill) ? 1 : 0);
                 const std::string addedUtf8 = lotus::utf8::encode(diffPart.addedPart);
                 const bool        ok        = uinputSelect ? vk.emitSelect(vkCount, addedUtf8) : vk.emit(vkCount, addedUtf8);
                 if (ok) {
@@ -652,7 +652,7 @@ namespace fcitx {
         currentBackspaceCount_ = 0;
         pendingCommitString_   = diffPart.addedPart;
         // dbus: the extra last backspace/Left is the trigger, it is swallowed and commits
-        expectedBackspaces_ = vkDbus ? delSize + (autofill ? 1 : 0) + 1 : uinputCount;
+        expectedBackspaces_ = vkDbus ? delSize + ((currentMode() != LotusMode::SuperSmooth && autofill) ? 1 : 0) + 1 : uinputCount;
         realSelect_         = uinputSelect;
         lastSelect_         = realSelect_;
         g_isDeleting.store(true, std::memory_order_release);

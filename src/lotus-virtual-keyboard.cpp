@@ -6,6 +6,7 @@
 
 #include "lotus-virtual-keyboard.h"
 #include "lotus-log.h"
+#include "lotus-utils.h"
 
 #include <fcitx-utils/utf8.h>
 
@@ -36,6 +37,9 @@ namespace fcitx {
         };
         constexpr size_t   kTextKeysLen = sizeof(kTextKeys) / sizeof(kTextKeys[0]);
         constexpr uint32_t kShiftMod    = 1;
+        // Do not hammer a compositor without the protocol: a failed probe is
+        // retried at most this often on the typing path.
+        constexpr int64_t kProbeRetryMs = 5000;
 
         struct RegistryData {
             wl_seat*                         seat    = nullptr;
@@ -145,14 +149,28 @@ namespace fcitx {
     }
 
     bool LotusVirtualKeyboard::available() {
-        if (probed_) {
-            return supported_;
-        }
-        probed_    = true;
-        supported_ = ensureConnected();
         if (supported_) {
+            return true;
+        }
+        const int64_t now = nowMs();
+        // A failed probe can be transient: fcitx5 may start before the
+        // compositor socket or its environment is ready. Retry occasionally
+        // instead of caching the failure for the lifetime of the process.
+        if (probed_ && now - lastProbeMs_ < kProbeRetryMs) {
+            return false;
+        }
+        return probe();
+    }
+
+    bool LotusVirtualKeyboard::probe() {
+        const bool firstProbe   = !probed_;
+        probed_                 = true;
+        lastProbeMs_            = nowMs();
+        const bool wasSupported = supported_;
+        supported_              = ensureConnected();
+        if (supported_ && !wasSupported) {
             LOTUS_INFO("compositor supports virtual-keyboard-unstable-v1, using LotusVirtualKeyboard");
-        } else {
+        } else if (!supported_ && firstProbe) {
             LOTUS_INFO("compositor has no virtual-keyboard-unstable-v1, using uinput");
         }
         return supported_;
