@@ -22,7 +22,7 @@ namespace {
 
 int main() {
     configureTestPaths("fcitx5-lotus-uinput-server-probe");
-    KbSender sender(buildSocketPath("kbSocket"));
+    KbSender sender(buildSocketPath("kb"));
 
     check("no server is detected before the socket exists", !sender.ensureConnected());
 

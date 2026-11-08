@@ -25,8 +25,8 @@
 class LOTUS_EXPORT KbSender {
   public:
     /**
-     * @brief Builds a sender for the given abstract socket path.
-     * @param socketPath Socket path built by buildSocketPath("kbSocket").
+     * @brief Builds a sender for the given filesystem socket path.
+     * @param socketPath Socket path built by buildSocketPath("kb").
      */
     explicit KbSender(std::string socketPath);
 
@@ -66,7 +66,7 @@ class LOTUS_EXPORT KbSender {
 
   private:
     /**
-     * @brief Opens the abstract socket.
+     * @brief Opens the filesystem socket.
      * @return True on success.
      */
     bool               connectLocked();

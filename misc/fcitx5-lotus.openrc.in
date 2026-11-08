@@ -1,6 +1,13 @@
 #!/usr/bin/openrc-run
 # Copyright (c) 2026 Zebra2711 <zebra2711t@gmail.com>
 # All rights reserved. Released under the 2-clause BSD license.
+#
+# This script supports two modes:
+#   * System instance (default): /etc/init.d/fcitx5-lotus.<user>
+#     The server runs as that user, because its sockets live in /run/user/<uid>.
+#   * User instance (openrc-user): /etc/user/init.d/fcitx5-lotus
+#     The server runs as the logged-in user, like ydotool. Enable it with:
+#         rc-update --user add fcitx5-lotus default
 
 user="${RC_SVCNAME#*.}"
 supervisor=supervise-daemon
@@ -8,26 +15,36 @@ respawn_delay=0
 respawn_max=0
 
 name="fcitx5-lotus-server"
-description="Fcitx5 Lotus Server for $user"
-capabilities="^cap_sys_nice,^cap_sys_ptrace"
 command="@CMAKE_INSTALL_FULL_BINDIR@/fcitx5-lotus-server"
-command_args="-u $user"
-command_user="@LOTUS_UINPUT_PROXY_USER@:input"
-pidfile="/run/${RC_SVCNAME}.pid"
+
+if [ "$user" = "$RC_SVCNAME" ]; then
+    description="Fcitx5 Lotus Server for the current user"
+    pidfile="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/fcitx5-lotus.pid"
+else
+    description="Fcitx5 Lotus Server for $user"
+    command_args="-u $user"
+    command_user="$user:input"
+    capabilities="^cap_sys_nice,^cap_sys_ptrace"
+    pidfile="/run/${RC_SVCNAME}.pid"
+fi
+
 depend() {
-    need localmount
-    after udev
+    if [ "$user" != "$RC_SVCNAME" ]; then
+        need localmount
+        after udev
+    fi
 }
 
 start_pre() {
-   if [ "$user" = "${RC_SVCNAME}" ]; then
-        eerror "$name cannot be started directly. You must create"
-        eerror "symbolic links to it for the users you want to start"
-        einfo "Usage:"
+    if [ "$user" = "$RC_SVCNAME" ] && [ "$(id -u)" -eq 0 ]; then
+        eerror "$name cannot be started directly as root."
+        einfo "System instance:"
         einfo "     sudo ln -s /etc/init.d/fcitx5-lotus /etc/init.d/fcitx5-lotus.\$(whoami)"
         einfo "     sudo rc-service fcitx5-lotus.\$(whoami) restart"
+        einfo "User instance:"
+        einfo "     rc-update --user add fcitx5-lotus default"
         return 1
-   fi
+    fi
 }
 
 stop_post() {

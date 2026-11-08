@@ -174,7 +174,7 @@ add_lotus_headless_test(
         server-socket-init.cpp
         ${PROJECT_SOURCE_DIR}/server/lotus-server-socket.cpp
         ${PROJECT_SOURCE_DIR}/server/lotus-logger.cpp
-        ${PROJECT_SOURCE_DIR}/server/lotus-abstract-socket.cpp
+        ${PROJECT_SOURCE_DIR}/server/lotus-unix-socket.cpp
     LABELS "unit;server"
     INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}/server ${PROJECT_SOURCE_DIR}/common
 )
@@ -192,6 +192,7 @@ add_lotus_headless_test(TARGET emoji_history_page_navigation SOURCES emoji-histo
 add_lotus_headless_test(TARGET emoji_search_history SOURCES emoji-search-history.cpp LABELS "unit;emoji")
 add_lotus_headless_test(TARGET emoji_history_unit SOURCES emoji-history-unit.cpp LABELS "unit;emoji")
 add_lotus_headless_test(TARGET kb_sender SOURCES kb-sender.cpp LABELS "unit;socket")
+add_lotus_headless_test(TARGET peer_credentials SOURCES peer-credentials.cpp LABELS "unit;socket")
 add_lotus_headless_test(TARGET program_name SOURCES program-name.cpp LABELS "unit;apprule")
 add_lotus_headless_test(TARGET mouse_click_plan SOURCES mouse-click-plan.cpp LABELS "unit;preedit")
 add_lotus_headless_test(TARGET window_focus_tracker SOURCES window-focus-tracker.cpp LABELS "integration;apprule;dbus")

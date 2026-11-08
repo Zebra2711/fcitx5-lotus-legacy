@@ -40,7 +40,7 @@ void setRealMode(fcitx::LotusMode mode) {
     g_realMode.store(mode, std::memory_order_release);
 }
 
-std::string buildSocketPath(std::string_view base_path_suffix) {
+std::string buildSocketPath(std::string_view socket_name) {
     struct passwd  pwd{};
     struct passwd* result  = nullptr;
     long           bufSize = sysconf(_SC_GETPW_R_SIZE_MAX);
@@ -55,26 +55,19 @@ std::string buildSocketPath(std::string_view base_path_suffix) {
     } else {
         username = "unknown";
     }
-    std::string path;
-    path.reserve(32);
-    path += "lotussocket-";
-    path += lotusSocketNamespace(username);
-    path += '-';
-    path += base_path_suffix;
-    const size_t maxSocketPathLength = UNIX_PATH_MAX - 1;
-    path.resize(std::min(path.length(), maxSocketPathLength));
-    return path;
+    return lotusSocketPath(socket_name, username);
 }
 
-int makeAbstractUnixSocket(std::string_view name, struct sockaddr_un& addr, socklen_t& len) {
+int makeUnixSocket(std::string_view path, struct sockaddr_un& addr, socklen_t& len) {
     const int fd = socket(AF_UNIX, SOCK_SEQPACKET | SOCK_NONBLOCK, 0);
     if (fd < 0) {
         return -1;
     }
-    addr.sun_family  = AF_UNIX;
-    addr.sun_path[0] = '\0';
-    memcpy(&addr.sun_path[1], name.data(), name.size());
-    len = offsetof(struct sockaddr_un, sun_path) + name.size() + 1;
+    addr.sun_family               = AF_UNIX;
+    const std::size_t path_length = std::min(path.size(), sizeof(addr.sun_path) - 1U);
+    std::memcpy(addr.sun_path, path.data(), path_length);
+    addr.sun_path[path_length] = '\0';
+    len                        = static_cast<socklen_t>(offsetof(struct sockaddr_un, sun_path) + path_length + 1U);
     return fd;
 }
 

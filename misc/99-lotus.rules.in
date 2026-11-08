@@ -1,2 +1,4 @@
-KERNEL=="uinput", SUBSYSTEM=="misc", OPTIONS+="static_node=uinput"
+# Allow members of the input group (the same criterion ydotool uses) to create
+# virtual devices without root.  This lets fcitx5-lotus-server run as a user service.
+KERNEL=="uinput", SUBSYSTEM=="misc", OPTIONS+="static_node=uinput", GROUP="input", MODE="0660"
 ACTION=="add|change", KERNEL=="uinput", SUBSYSTEM=="misc", RUN+="@LOTUS_SETFACL_EXECUTABLE@ -m u:@LOTUS_UINPUT_PROXY_USER@:rw /dev/uinput"

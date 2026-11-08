@@ -16,18 +16,22 @@
 #ifndef _SERVER_LOTUS_SERVER_SOCKET_H_
 #define _SERVER_LOTUS_SERVER_SOCKET_H_
 
-#include "lotus-abstract-socket.h"
+#include "lotus-unix-socket.h"
 
 #include <string_view>
 
 /**
- * @brief Binds a server socket, logging the errno on failure.
+ * @brief Binds a server socket, removing a stale socket file first.
+ *
+ * When a live server already owns the path, bind() is not attempted and the
+ * function fails, so two servers never race for the same socket.
+ *
  * @param fd Socket descriptor to bind.
- * @param address Abstract address to bind to.
+ * @param address Filesystem address to bind to; marked as owned on success.
  * @param label Socket name used in the log message (e.g. "keyboard socket").
  * @return True when bind() succeeded, false otherwise.
  */
-bool bindServerSocket(int fd, const AbstractSocket& address, std::string_view label);
+bool bindServerSocket(int fd, UnixSocket& address, std::string_view label);
 
 /**
  * @brief Marks a bound server socket as listening, logging the errno on failure.

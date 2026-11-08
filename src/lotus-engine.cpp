@@ -163,7 +163,7 @@ namespace fcitx {
     }
 
     LotusEngine::LotusEngine(Instance* instance) :
-        instance_(*instance), kbSender_(buildSocketPath("kbSocket")), factory_([this](InputContext& ic) { return new LotusState(this, &ic); }) { //NOLINT
+        instance_(*instance), kbSender_(buildSocketPath("kb")), factory_([this](InputContext& ic) { return new LotusState(this, &ic); }) { //NOLINT
         windowFocusTracker_ = std::make_unique<WindowFocusTracker>([this] { appRuleDispatcher_.schedule([this] { refreshFocusedAppRule(); }); });
         std::string desktop = getEnv("XDG_CURRENT_DESKTOP");
         isGnome_            = (!desktop.empty()) && desktop.find("GNOME") != std::string::npos;
@@ -1248,10 +1248,10 @@ namespace fcitx {
             return;
         }
 
-        const std::string  mouseSocketPath = buildSocketPath("mouseSocket");
+        const std::string  mouseSocketPath = buildSocketPath("mouse");
         struct sockaddr_un addr{};
         socklen_t          len = 0;
-        FdGuard            sock(makeAbstractUnixSocket(mouseSocketPath, addr, len));
+        FdGuard            sock(makeUnixSocket(mouseSocketPath, addr, len));
         if (!sock.isValid()) {
             LOTUS_ERROR("Failed to create mouse socket: " + std::string(strerror(errno)));
             return;

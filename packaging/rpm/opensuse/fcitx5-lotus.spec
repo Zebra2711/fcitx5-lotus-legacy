@@ -63,6 +63,7 @@ cd %{_builddir}/%{name}-%{version}
 
 %{_modulesloaddir}/fcitx5-lotus.conf
 %{_unitdir}/fcitx5-lotus-server@.service
+%{_userunitdir}/fcitx5-lotus-server.service
 %{_sysusersdir}/lotus.conf
 %{_udevrulesdir}/99-lotus.rules
 
@@ -98,8 +99,9 @@ cd %{_builddir}/%{name}-%{version}
 if [ $1 -eq 1 ]; then
     echo "--- Cấu hình Lotus ---"
     echo "Hướng dẫn sau cài đặt:"
-    echo "1. Kích hoạt Server cho user của bạn:"
-    echo "   sudo systemctl enable --now fcitx5-lotus-server@\$(whoami).service"
+    echo "1. Kích hoạt Server cho user của bạn (không cần sudo):"
+    echo "   systemctl --user enable --now fcitx5-lotus-server.service"
+    echo "   (thêm user vào group input nếu /dev/uinput chưa ghi được: sudo usermod -aG input \$(whoami))"
     echo ""
     echo "2. Cấu hình Fcitx5:"
     echo "   - Mở 'Fcitx5 Configuration', thêm bộ gõ Lotus"
@@ -110,8 +112,8 @@ if [ $1 -eq 1 ]; then
 elif [ $1 -eq 2 ]; then
     echo "--- Cấu hình Lotus ---"
     echo "Hướng dẫn sau cập nhật:"
-    echo "1. Khởi động lại Server cho user của bạn:"
-    echo "   sudo systemctl restart fcitx5-lotus-server@\$(whoami).service"
+    echo "1. Khởi động lại Server cho user của bạn (không cần sudo):"
+    echo "   systemctl --user restart fcitx5-lotus-server.service"
     echo ""
     echo "2. Cấu hình Fcitx5:"
     echo "   - Mở 'Fcitx5 Configuration', nhấn restart để khởi động lại."

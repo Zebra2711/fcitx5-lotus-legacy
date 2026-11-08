@@ -7,13 +7,14 @@
  *
  */
 
-#include "lotus-abstract-socket.h"
+#include "lotus-unix-socket.h"
 #include "lotus-server.h"
 #include "lotus-server-socket.h"
 #include "lotus-logger.h"
 #include "common-executable-path.h"
 #include "common-fd-guard.h"
 #include "common-protocol.h"
+#include "common-peer-credentials.h"
 #include "common-socket-name.h"
 #include "lotus-physical-shift.h"
 
@@ -154,7 +155,7 @@ std::optional<uid_t> getUidForUser(std::string_view username) {
 
 void boostProcessPriority() {
     if (setpriority(PRIO_PROCESS, 0, -10) != 0) { //NOLINT
-        LotusLogger::instance().error("Failed to boost process priority");
+        LotusLogger::instance().warn("Failed to boost process priority (CAP_SYS_NICE unavailable)");
     }
 }
 
@@ -183,31 +184,26 @@ const struct libinput_interface interface = {
 };
 
 std::optional<pid_t> authorizePeer(int fd, uid_t expectedUid, std::string_view socketLabel) {
-    struct ucred cred{};
-    socklen_t    len = sizeof(struct ucred);
-    if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &len) != 0) {
+    const auto credentials = lotusPeerCredentials(fd);
+    if (!credentials.has_value()) {
         LotusLogger::instance().warn("Failed to get peer credentials for " + std::string(socketLabel));
         return std::nullopt;
     }
-    if (cred.uid != expectedUid) {
-        LotusLogger::instance().warn("Unauthorized UID connection attempt to " + std::string(socketLabel) + " from UID: " + std::to_string(cred.uid));
+    if (credentials->uid != expectedUid) {
+        LotusLogger::instance().warn("Unauthorized UID connection attempt to " + std::string(socketLabel) + " from UID: " + std::to_string(credentials->uid));
         return std::nullopt;
     }
 
-    const std::string          exeLink = "/proc/" + std::to_string(cred.pid) + "/exe";
-    std::array<char, PATH_MAX> exePath{};
-    const ssize_t              length = ::readlink(exeLink.c_str(), exePath.data(), exePath.size() - 1);
-    if (length <= 0) {
+    const std::string exe = lotusPeerExecutablePath(credentials->pid);
+    if (exe.empty()) {
         LotusLogger::instance().warn("Failed to resolve the peer executable for " + std::string(socketLabel));
         return std::nullopt;
     }
-
-    const std::string_view exe(exePath.data(), static_cast<std::size_t>(length));
     if (!isAllowedExecutablePath(exe, LOTUS_FCITX5_EXECUTABLE, LOTUS_ALT_EXECUTABLE_PREFIX)) {
-        LotusLogger::instance().warn("Unauthorized executable connection attempt to " + std::string(socketLabel) + " from: " + std::string(exe));
+        LotusLogger::instance().warn("Unauthorized executable connection attempt to " + std::string(socketLabel) + " from: " + exe);
         return std::nullopt;
     }
-    return cred.pid;
+    return credentials->pid;
 }
 
 int main(int argc, char* argv[]) {
@@ -224,9 +220,8 @@ int main(int argc, char* argv[]) {
     boostProcessPriority();
     pinToPcore();
 
-    const std::string    socketNamespace = lotusSocketNamespace(targetUser);
-    const AbstractSocket kbSocket        = makeAbstractSocket("lotussocket-" + socketNamespace + "-kbSocket");
-    const AbstractSocket mouseSocket     = makeAbstractSocket("lotussocket-" + socketNamespace + "-mouseSocket");
+    UnixSocket kbSocket    = makeUnixSocket(lotusSocketPath("kb", targetUser));
+    UnixSocket mouseSocket = makeUnixSocket(lotusSocketPath("mouse", targetUser));
 
     // Setup Uinput
     UinputDevice       uinput;

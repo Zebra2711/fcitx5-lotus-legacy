@@ -14,7 +14,7 @@ if [ "$user" = "$svc" ]; then
 fi
 
 exec setpriv \
-    --reuid=@LOTUS_UINPUT_PROXY_USER@ \
+    --reuid="$user" \
     --regid=input \
     --init-groups \
     --bounding-set -all,+sys_nice,+sys_ptrace \

@@ -170,11 +170,14 @@ inline void configureTestPaths(const char* name) {
     std::filesystem::create_directories(root / "config/fcitx5/conf", ec);
     std::filesystem::create_directories(root / "data", ec);
     std::filesystem::create_directories(root / "cache", ec);
+    std::filesystem::create_directories(root / "run", ec);
+    std::filesystem::permissions(root / "run", std::filesystem::perms::owner_all, ec);
 
     setenv("HOME", root.c_str(), 1);
     setenv("XDG_CONFIG_HOME", (root / "config").c_str(), 1);
     setenv("XDG_DATA_HOME", (root / "data").c_str(), 1);
     setenv("XDG_CACHE_HOME", (root / "cache").c_str(), 1);
+    setenv("XDG_RUNTIME_DIR", (root / "run").c_str(), 1);
 
     static std::filesystem::path s_cleanupPath;
     s_cleanupPath                = root;

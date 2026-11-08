@@ -24,11 +24,6 @@
 #include "common-export.h"
 #include "lotus-mode.h"
 
-/**
- * @brief Maximum length of Unix socket paths.
-*/
-#define UNIX_PATH_MAX sizeof(((struct sockaddr_un*)0)->sun_path)
-
 // Forward declaration: the header only passes InputContext pointers around.
 namespace fcitx {
     class InputContext;
@@ -62,25 +57,25 @@ struct DiffPart {
 };
 
 /**
- * @brief Builds socket path from base suffix.
- * @param base_path_suffix Suffix to append to base path.
- * @return Full socket path.
+ * @brief Builds the per-user filesystem socket path from a socket name.
+ * @param socket_name Socket name, e.g. "kb" or "mouse".
+ * @return Full socket path under XDG_RUNTIME_DIR.
  */
-std::string LOTUS_EXPORT buildSocketPath(std::string_view base_path_suffix);
+std::string LOTUS_EXPORT buildSocketPath(std::string_view socket_name);
 
 /**
- * @brief Creates a non-blocking abstract-namespace UNIX socket.
+ * @brief Creates a non-blocking filesystem UNIX socket.
  *
- * Fills @p addr with the abstract socket name and @p len with the address
+ * Fills @p addr with the filesystem socket address and @p len with the address
  * length. The caller keeps ownership of the returned descriptor and is
  * responsible for connect()/bind() and for closing it on failure.
  *
- * @param name Socket name inside the abstract namespace.
+ * @param path Filesystem path of the socket.
  * @param addr Destination address.
  * @param len Destination address length.
  * @return Socket descriptor, or -1 when the socket could not be created.
  */
-int makeAbstractUnixSocket(std::string_view name, struct sockaddr_un& addr, socklen_t& len);
+int makeUnixSocket(std::string_view path, struct sockaddr_un& addr, socklen_t& len);
 
 /**
  * @brief Returns the fcitx5 configuration directory of the current user.

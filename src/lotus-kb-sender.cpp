@@ -6,12 +6,16 @@
  */
 #include "lotus-kb-sender.h"
 
+#include "common-peer-credentials.h"
 #include "lotus-log.h"
 
+#include <algorithm>
 #include <cerrno>
+#include <cstddef>
 #include <cstring>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <unistd.h>
 #include <utility>
 
 KbSender::KbSender(std::string socketPath) : socketPath_(std::move(socketPath)) {}
@@ -68,10 +72,10 @@ void KbSender::close() {
 bool KbSender::connectLocked() {
     sockaddr_un address{};
     address.sun_family    = AF_UNIX;
-    address.sun_path[0]   = '\0';
-    const auto socketPath = socketPath_;
-    std::memcpy(&address.sun_path[1], socketPath.data(), socketPath.size());
-    const auto length = static_cast<socklen_t>(offsetof(sockaddr_un, sun_path) + socketPath.size() + 1);
+    const auto pathLength = std::min(socketPath_.size(), sizeof(address.sun_path) - 1U);
+    std::memcpy(address.sun_path, socketPath_.data(), pathLength);
+    address.sun_path[pathLength] = '\0';
+    const auto length            = static_cast<socklen_t>(offsetof(sockaddr_un, sun_path) + pathLength + 1U);
 
     FdGuard    candidate(socket(AF_UNIX, SOCK_SEQPACKET, 0));
     if (!candidate.isValid()) {
@@ -82,6 +86,13 @@ bool KbSender::connectLocked() {
         LOTUS_ERROR("Failed to connect to socket: " + std::string(std::strerror(errno)));
         return false;
     }
+
+    const auto peer = lotusPeerCredentials(candidate.get());
+    if (!peer.has_value() || peer->uid != getuid()) {
+        LOTUS_ERROR("Refusing a keyboard socket that is not owned by the current user");
+        return false;
+    }
+
     fd_ = std::move(candidate);
     return true;
 }

@@ -79,10 +79,18 @@ in
 
     i18n.inputMethod.fcitx5.addons = [ cfg.package ];
 
-    users.users.uinput_proxy = {
-      isSystemUser = true;
-      group = "input";
-    };
+    # The server instance now runs as the target user (its sockets live in
+    # /run/user/<uid>), so that user needs access to /dev/uinput.
+    users.users =
+      genAttrs effectiveUsers (_: {
+        extraGroups = [ "input" ];
+      })
+      // {
+        uinput_proxy = {
+          isSystemUser = true;
+          group = "input";
+        };
+      };
 
     services.udev.packages = [ cfg.package ];
     systemd.packages = [ cfg.package ];

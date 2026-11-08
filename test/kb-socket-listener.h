@@ -6,7 +6,7 @@
  * @brief Shared helper for tests that observe the addon -> uinput server
  *        keyboard socket (kbSocket).
  *
- * Tests bind the abstract socket first, accept the addon's connection and read
+ * Tests bind the filesystem socket first, accept the addon's connection and read
  * the KbMsg request the addon emits when a replacement must be delivered by the
  * virtual uinput keyboard (BackSpace stream or Shift+Left selection).
  */
@@ -17,6 +17,7 @@
 
 #include <cerrno>
 #include <cstddef>
+#include <cstdio>
 #include <cstring>
 #include <iostream>
 #include <string>
@@ -44,17 +45,30 @@ class KbSocketListener {
             return;
         }
         sockaddr_un address{};
-        address.sun_family    = AF_UNIX;
-        const auto socketPath = buildSocketPath("kbSocket");
-        address.sun_path[0]   = '\0';
-        std::memcpy(&address.sun_path[1], socketPath.data(), socketPath.size());
-        const auto length = static_cast<socklen_t>(offsetof(sockaddr_un, sun_path) + socketPath.size() + 1);
-        if (bind(fd_.get(), reinterpret_cast<const sockaddr*>(&address), length) < 0 || listen(fd_.get(), 5) < 0) {
-            fail("bind/listen");
+        address.sun_family = AF_UNIX;
+        socketPath_        = buildSocketPath("kb");
+        const int written  = std::snprintf(address.sun_path, sizeof(address.sun_path), "%s", socketPath_.c_str());
+        if (written < 0 || static_cast<std::size_t>(written) >= sizeof(address.sun_path)) {
+            fail("socket path");
+            return;
+        }
+        const auto length = static_cast<socklen_t>(offsetof(sockaddr_un, sun_path) + static_cast<std::size_t>(written) + 1U);
+        if (bind(fd_.get(), reinterpret_cast<const sockaddr*>(&address), length) < 0) {
+            // A failed bind leaves a live server's socket file in place: never unlink it.
+            fail("bind");
+            return;
+        }
+        bound_ = true;
+        if (listen(fd_.get(), 5) < 0) {
+            fail("listen");
         }
     }
 
-    ~KbSocketListener()                                  = default;
+    ~KbSocketListener() {
+        if (bound_) {
+            ::unlink(socketPath_.c_str());
+        }
+    }
     KbSocketListener(const KbSocketListener&)            = delete;
     KbSocketListener& operator=(const KbSocketListener&) = delete;
     KbSocketListener(KbSocketListener&&)                 = delete;
@@ -185,6 +199,8 @@ class KbSocketListener {
         fd_.reset();
     }
 
-    FdGuard fd_;
-    FdGuard client_;
+    FdGuard     fd_;
+    FdGuard     client_;
+    std::string socketPath_;
+    bool        bound_ = false;
 };
