@@ -36,6 +36,7 @@ namespace fcitx {
         bool injecting() const { return injecting_; }
         bool consumeEcho(uint32_t code, uint32_t time);
         bool available();
+        bool echoPending() const { return !echo_.empty(); }
 
       private:
         LotusVkKeyboard() = default;

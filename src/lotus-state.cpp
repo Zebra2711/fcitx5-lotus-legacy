@@ -780,6 +780,15 @@ namespace fcitx {
             keyEvent.forward();
             return;
         }
+        auto fwd = [&]() {
+            auto& vk = LotusVkKeyboard::instance();
+            if (vkMode && vk.echoPending() && vk.emit(0, keyUtf8)) {
+                LOTUS_INFO("DBG ordered via VK: " + keyUtf8);
+                keyEvent.filterAndAccept();
+                return;
+            }
+            keyEvent.forward();
+        };
         std::string commitStr;
         std::string preeditStrBuf;
         bool        processed = lotusEngine_->processKeyEventAndPull(currentSym, keyEvent.rawKey().states(), &commitStr, &preeditStrBuf);
@@ -833,7 +842,7 @@ namespace fcitx {
                         ic_->commitString(addedPart);
                         LOTUS_INFO("Commit: " + addedPart);
                     }
-                } else keyEvent.forward();
+                } else fwd();
             }
             hasHistory_ = false;
             lotusEngine_->resetEngine();
@@ -847,7 +856,7 @@ namespace fcitx {
                 lotusEngine_->resetEngine();
                 oldPreBuffer_.clear();
             }
-            keyEvent.forward();
+            fwd();
             return;
         }
         hasHistory_ = true;
@@ -884,7 +893,7 @@ namespace fcitx {
                         }
                 }
                 if (!wa_flag && !isCommit) {
-                    keyEvent.forward();
+                    fwd();
                 }
             } else {
                 if (!vkMode && uinput_client_fd_ < 0) {
