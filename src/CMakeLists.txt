@@ -1,5 +1,26 @@
 option(LOTUS_ENABLE_AVX512 "Enable AVX-512 acceleration for lotus-utils" OFF)
 option(LOTUS_ENABLE_LOG "Enable LOG" ON)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
+find_program(WAYLAND_SCANNER wayland-scanner REQUIRED)
+
+set(LOTUS_VK_XML "${PROJECT_SOURCE_DIR}/protocols/virtual-keyboard-unstable-v1.xml")
+set(LOTUS_VK_HEADER "${CMAKE_CURRENT_BINARY_DIR}/virtual-keyboard-unstable-v1-client-protocol.h")
+set(LOTUS_VK_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/virtual-keyboard-unstable-v1-protocol.c")
+
+add_custom_command(
+  OUTPUT "${LOTUS_VK_HEADER}"
+  COMMAND "${WAYLAND_SCANNER}" client-header "${LOTUS_VK_XML}" "${LOTUS_VK_HEADER}"
+  DEPENDS "${LOTUS_VK_XML}"
+  VERBATIM
+)
+add_custom_command(
+  OUTPUT "${LOTUS_VK_SOURCE}"
+  COMMAND "${WAYLAND_SCANNER}" private-code "${LOTUS_VK_XML}" "${LOTUS_VK_SOURCE}"
+  DEPENDS "${LOTUS_VK_XML}"
+  VERBATIM
+)
+
 set(fcitx_lotus_sources
   lotus.cpp
   lotus-engine.cpp
@@ -8,6 +29,9 @@ set(fcitx_lotus_sources
   lotus-utils.cpp
   lotus-monitor.cpp
   emoji.cpp
+  lotus-vk-keyboard.cpp
+  "${LOTUS_VK_HEADER}"
+  "${LOTUS_VK_SOURCE}"
 )
 
 if (LOTUS_ENABLE_AVX512)
@@ -27,7 +51,9 @@ target_link_libraries(lotus
   Unikey::Core
   Pthread::Pthread
   X11::X11
+  ${WAYLAND_CLIENT_LIBRARIES}
 )
+target_include_directories(lotus PRIVATE ${WAYLAND_CLIENT_INCLUDE_DIRS})
 if (LOTUS_ENABLE_LOG)
   target_compile_definitions(lotus PRIVATE LOTUS_ENABLE_LOG=1)
 endif()
@@ -36,6 +62,7 @@ target_include_directories(lotus PRIVATE "${PROJECT_SOURCE_DIR}/unikey")
 
 target_include_directories(lotus PRIVATE
     ${PROJECT_BINARY_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
 )
 target_compile_definitions(lotus PRIVATE
     FCITX5_LOTUS_SETTINGS_PATH=\"${CMAKE_INSTALL_FULL_BINDIR}/fcitx5-lotus-settings\"

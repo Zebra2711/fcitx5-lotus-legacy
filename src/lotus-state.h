@@ -182,6 +182,8 @@ namespace fcitx {
          * @param addedPart Text to insert.
          */
         bool performReplacement(const std::string& deletedPart, const std::string& addedPart);
+        bool performVkReplacement(const std::string& deletedPart, const std::string& addedPart);
+        bool performDbusReplacement(const std::string& deletedPart, const std::string& addedPart);
 
         /**
          * @brief Handles the double space to period replacement.

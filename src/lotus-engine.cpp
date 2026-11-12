@@ -338,6 +338,7 @@ if (!alreadySetup) {
                 case FcitxKey_2: selectedMode = LotusMode::Uinput; break;
                 case FcitxKey_3: selectedMode = LotusMode::Minecraft; break;
                 case FcitxKey_4: selectedMode = LotusMode::SurroundingText; break;
+                case FcitxKey_5: selectedMode = LotusMode::FkUinput; break;
                 case FcitxKey_q: selectedMode = LotusMode::Preedit; break;
                 case FcitxKey_w: selectedMode = LotusMode::Emoji; break;
                 case FcitxKey_e: selectedMode = LotusMode::Off; break;
@@ -389,6 +390,7 @@ if (!alreadySetup) {
             LOTUS_INFO("Mode menu key pressed");
             currentConfigureApp_ = getProgramName(ic);
             g_mouse_clicked.store(false, std::memory_order_release);
+            is_deleting_.store(false, std::memory_order_release);
             showAppModeMenu(ic);
             keyEvent.filterAndAccept();
             return;
@@ -423,6 +425,10 @@ if (!alreadySetup) {
         auto*      ic        = event.inputContext();
         if (!ic->hasFocus() && event.type() != EventType::InputContextFocusOut) return;
         auto*      state     = ic->propertyFor(&factory_);
+        if (is_deleting_.load(std::memory_order_acquire) && state->isReplacing()) {
+            LOTUS_INFO("Focus out during replacement, ignored");
+            return;
+        }
         const bool surrvalid = ic->surroundingText().isValid();
         const bool is_dbus   = getFrontendName(ic) == "dbus";
         if (realMode == LotusMode::Preedit && event.type() != EventType::InputContextFocusOut) {
@@ -564,7 +570,7 @@ if (!alreadySetup) {
         isSelectingAppMode_ = true;
         auto candidateList = std::make_unique<CommonCandidateList>();
         candidateList->setLayoutHint(CandidateLayoutHint::Vertical);
-        candidateList->setPageSize(10);
+        candidateList->setPageSize(12);
         auto getLabel = [&](const LotusMode& modeName, const std::string& modeLabel) {
             if (modeName == realMode) { return Text(">> " + modeLabel); }
             return Text("   " + modeLabel);
@@ -596,6 +602,7 @@ if (!alreadySetup) {
         candidateList->append(std::make_unique<AppModeCandidateWord>(getLabel(LotusMode::Uinput, _("[2] Uinput (Slow)")), applyMode(LotusMode::Uinput)));
         candidateList->append(std::make_unique<AppModeCandidateWord>(getLabel(LotusMode::Minecraft, _("[3] Uinput (Minecraft)")), applyMode(LotusMode::Minecraft)));
         candidateList->append(std::make_unique<AppModeCandidateWord>(getLabel(LotusMode::SurroundingText, _("[4] Surrounding Text")), applyMode(LotusMode::SurroundingText)));
+        candidateList->append(std::make_unique<AppModeCandidateWord>(getLabel(LotusMode::FkUinput, _("[5] FkUinput")), applyMode(LotusMode::FkUinput)));
         candidateList->append(std::make_unique<AppModeCandidateWord>(getLabel(LotusMode::Preedit, _("[q] Preedit")), applyMode(LotusMode::Preedit)));
         candidateList->append(std::make_unique<AppModeCandidateWord>(getLabel(LotusMode::Emoji, _("[w] Emoji Picker")), applyMode(LotusMode::Emoji)));
         candidateList->append(std::make_unique<AppModeCandidateWord>(getLabel(LotusMode::Off, _("[e] OFF")), applyMode(LotusMode::Off)));
@@ -622,9 +629,10 @@ if (!alreadySetup) {
             case LotusMode::Uinput: selectedIndex = 2; break;
             case LotusMode::Minecraft: selectedIndex = 3; break;
             case LotusMode::SurroundingText: selectedIndex = 4; break;
-            case LotusMode::Preedit: selectedIndex = 5; break;
-            case LotusMode::Emoji: selectedIndex = 6; break;
-            case LotusMode::Off: selectedIndex = 7; break;
+            case LotusMode::FkUinput: selectedIndex = 5; break;
+            case LotusMode::Preedit: selectedIndex = 6; break;
+            case LotusMode::Emoji: selectedIndex = 7; break;
+            case LotusMode::Off: selectedIndex = 8; break;
             default: selectedIndex = 1; break;
         }
         candidateList->setGlobalCursorIndex(selectedIndex);

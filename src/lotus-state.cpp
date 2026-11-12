@@ -13,12 +13,14 @@
 #include "lotus-input-backend.hpp"
 #include "lotus.h"
 #include "app_quirks.h"
+#include "lotus-vk-keyboard.h"
 
 #include <cstddef>
 #include <fcitx-utils/log.h>
 #include <fcitx-utils/utf8.h>
 #include <fcitx/candidatelist.h>
 #include <fcitx/inputpanel.h>
+#include <fcitx/text.h>
 #include <fcitx/menu.h>
 #include <fcitx/userinterface.h>
 #include <algorithm>
@@ -31,6 +33,7 @@
 
 namespace fcitx {
     constexpr int      MAX_SCAN_LENGTH = 15;
+    static std::atomic<int64_t> s_deleteStartMs{0};
     static inline bool isWordBreak(uint32_t ucs4) {
         if (__builtin_expect(ucs4 > 64, 1)) return false;
         if (__builtin_expect(ucs4 == 64, 0)) return true; // '@'
@@ -514,7 +517,14 @@ namespace fcitx {
             utf8::length(deletedPart)
 #endif
         ) + 1 + autofillOffset;
-        if (realMode == LotusMode::Minecraft) expected_backspaces_-=1;
+        if (realMode == LotusMode::Minecraft) {
+            expected_backspaces_-=1;
+            for (int i = 0; i <= expected_backspaces_; ++i) {
+                Key backspace(FcitxKey_BackSpace);
+                ic_->forwardKey(backspace);
+            }
+            ic_->commitString(std::string(pending_commit_string_));
+        }
         // Use deleteSurroundingText for apps that support it for smooth typing
         LOTUS_INFO("surr: \""+surrounding.text()+"\"");
         if (surrtp) LOTUS_INFO("surrtp");
@@ -611,11 +621,74 @@ namespace fcitx {
                 expected_backspaces_ = 0;
                 return true;
             }*/
+            s_deleteStartMs.store(now_ms(), std::memory_order_release);
             is_deleting_.store(true, std::memory_order_release);
             send_backspace_uinput(expected_backspaces_);
             LOTUS_INFO("Send " + std::to_string(expected_backspaces_ - 1 - autofillOffset) + " backspaces + 1 trigger");
             if (autofillOffset) LOTUS_INFO("Send more 1 extra delete suggestions");
         }
+        return false;
+    }
+    bool LotusState::performDbusReplacement(const std::string& deletedPart, const std::string& addedPart) {
+        if (deletedPart.empty()) {
+            if (!addedPart.empty()) ic_->commitString(addedPart);
+            return true;
+        }
+        LOTUS_INFO("FkUinput dbus replacement: " + deletedPart + " -> " + addedPart);
+        const int autofillOffset = isAutofillCertain(ic_->surroundingText()) ? 1 : 0;
+        current_backspace_count_ = 0;
+        pending_commit_string_   = addedPart;
+        expected_backspaces_     = static_cast<int>(utf8::length(deletedPart)) + 1 + autofillOffset;
+        s_deleteStartMs.store(now_ms(), std::memory_order_release);
+        is_deleting_.store(true, std::memory_order_release);
+        if (!LotusVkKeyboard::instance().emit(expected_backspaces_, "", false)) {
+            finishReplacement();
+            return false;
+        }
+        return true;
+    }
+    bool LotusState::performVkReplacement(const std::string& deletedRaw, const std::string& addedRaw) {
+        std::string deletedPart = deletedRaw;
+        std::string addedPart   = addedRaw;
+        auto isCont = [](const std::string& s) { return !s.empty() && (static_cast<unsigned char>(s[0]) & 0xC0) == 0x80; };
+        size_t pos = oldPreBuffer_.size() >= deletedPart.size() ? oldPreBuffer_.size() - deletedPart.size() : 0;
+        while ((isCont(deletedPart) || isCont(addedPart)) && pos > 0) {
+            --pos;
+            deletedPart.insert(deletedPart.begin(), oldPreBuffer_[pos]);
+            addedPart.insert(addedPart.begin(), oldPreBuffer_[pos]);
+        }
+        if (deletedPart.empty() && addedPart.empty()) {
+            return true;
+        }
+        if (getFrontendName(ic_) == "dbus" || getFrontendName(ic_) == "fcitx4") {
+            return performDbusReplacement(deletedPart, addedPart);
+        }
+        LOTUS_INFO("FkUinput replacement: " + deletedPart + " -> " + addedPart);
+        const auto& surrounding    = ic_->surroundingText();
+        const int   autofillOffset = isAutofillCertain(surrounding) ? 1 : 0;
+        const int   bsCount        = static_cast<int>(
+#if defined(LOTUS_ENABLE_AVX512) && defined(__AVX512F__)
+            utf8_length_avx512(deletedPart.data(), deletedPart.size())
+#else
+            utf8::length(deletedPart)
+#endif
+        ) + autofillOffset;
+        auto& vk = LotusVkKeyboard::instance();
+        if (vk.emit(bsCount, addedPart)) {
+            LOTUS_INFO("FkUinput: sent " + std::to_string(bsCount) + " BS + keys for [" + addedPart + "]");
+            return true;
+        }
+        if (ic_->capabilityFlags().test(CapabilityFlag::SurroundingText) && surrounding.isValid()) {
+            LOTUS_WARN("FkUinput: VK unavailable, falling back to deleteSurroundingText");
+            if (bsCount > 0) {
+                ic_->deleteSurroundingText(-bsCount, static_cast<unsigned int>(bsCount));
+            }
+            if (!addedPart.empty()) {
+                ic_->commitString(addedPart);
+            }
+            return true;
+        }
+        LOTUS_WARN("FkUinput: VK unavailable");
         return false;
     }
     bool LotusState::checkForwardSpecialKey(KeyEvent& keyEvent, KeySym& currentSym) {
@@ -658,7 +731,10 @@ namespace fcitx {
             keyEvent.forward();
             return;
         }
-        if (uinput_client_fd_ < 0) setup_uinput();
+        const std::string frontend = getFrontendName(ic_);
+        LOTUS_INFO("frontend: " + frontend);
+        const bool vkMode = realMode == LotusMode::FkUinput;
+        if (!vkMode && uinput_client_fd_ < 0) setup_uinput();
         if (isBackspace(currentSym) || currentSym == FcitxKey_Return) {
             if (isBackspace(currentSym)) {
                 hasHistory_ = true;
@@ -685,9 +761,11 @@ namespace fcitx {
             std::string deletedPart;
             std::string addedPart;
             compareAndSplitStrings(oldPreBuffer_, commitStr, deletedPart, addedPart);
+            LOTUS_INFO("oldPreBuffer_:"+oldPreBuffer_+", commitStr:"+commitStr+", deletedPart:"+deletedPart+", addedPart: " +addedPart);
             if (!deletedPart.empty()) {
                 keyEvent.filterAndAccept();
-                performReplacement(deletedPart, addedPart);
+                if (vkMode) performVkReplacement(deletedPart, addedPart);
+                else performReplacement(deletedPart, addedPart);
                 //if (isTerm) keyEvent.forward();
             } else {
                 bool wasAutoCapitalized = (currentSym != keyEvent.rawKey().sym());
@@ -700,9 +778,13 @@ namespace fcitx {
 #else
                         addedPart = addedPart.substr(0, addedPart.size() - 1);
 #endif
-                    ic_->commitString(addedPart);
-                    LOTUS_INFO("Commit: " + addedPart);
                     keyEvent.filterAndAccept();
+                    if (vkMode) {
+                        performVkReplacement("", addedPart);
+                    } else {
+                        ic_->commitString(addedPart);
+                        LOTUS_INFO("Commit: " + addedPart);
+                    }
                 } else keyEvent.forward();
             }
             hasHistory_ = false;
@@ -732,13 +814,14 @@ namespace fcitx {
                 bool isCommit           = false;
                 bool wasAutoCapitalized = (currentSym != keyEvent.rawKey().sym());
                 if (!addedPart.empty()) {
-                    if (wa_flag) ic_->commitString(addedPart);
+                    if (wa_flag && !vkMode) ic_->commitString(addedPart);
                     oldPreBuffer_ = preeditStr;
                     if (!wa_flag)
                         if (wasAutoCapitalized || addedPart != keyUtf8) {
                             LOTUS_INFO("Commit: " + addedPart);
-                            ic_->commitString(addedPart);
                             keyEvent.filterAndAccept();
+                            if (vkMode) performVkReplacement("", addedPart);
+                            else ic_->commitString(addedPart);
                             isCommit = true;
                         }
                 }
@@ -746,7 +829,7 @@ namespace fcitx {
                     keyEvent.forward();
                 }
             } else {
-                if (uinput_client_fd_ < 0) {
+                if (!vkMode && uinput_client_fd_ < 0) {
                     LOTUS_ERROR("Cannot connect to uinput server, commit rawkey");
                     std::string rawKey = keyEvent.key().toString();
                     if (!rawKey.empty()) ic_->commitString(rawKey);
@@ -754,7 +837,8 @@ namespace fcitx {
                 }
                 if (is_deleting_.load()) finishReplacement();
                 if (!wa_flag) keyEvent.filterAndAccept();
-                performReplacement(deletedPart, addedPart);
+                if (vkMode) performVkReplacement(deletedPart, addedPart);
+                else performReplacement(deletedPart, addedPart);
                 //if (isTerm) keyEvent.forward();
                 oldPreBuffer_ = preeditStr;
             }
@@ -898,6 +982,11 @@ namespace fcitx {
                 LOTUS_INFO("Commit: . ");
                 break;
             }
+            case LotusMode::FkUinput: {
+                performVkReplacement(" ", ". ");
+                LOTUS_INFO("Commit: . ");
+                break;
+            }
             default: { // Uinput, Smooth, Preedit, etc.
                 performReplacement(" ", ". ");
                 LOTUS_INFO("Commit: . ");
@@ -911,9 +1000,21 @@ namespace fcitx {
     }
     void LotusState::keyEvent(KeyEvent& keyEvent) {
         if (!lotusEngine_ || keyEvent.isRelease()) return;
+        if (LotusVkKeyboard::instance().injecting()) {
+            keyEvent.filterAndAccept();
+            return;
+        }
+        if (realMode == LotusMode::FkUinput && LotusVkKeyboard::instance().consumeEcho(static_cast<uint32_t>(keyEvent.rawKey().code()), static_cast<uint32_t>(keyEvent.time()))) {
+            keyEvent.forward();
+            return;
+        }
         if (uinput_client_fd_ < 0) {
             LOTUS_WARN("uinput connect failed, reconnecting....");
             connect_uinput_server();
+        }
+        if (is_deleting_.load() && now_ms() - s_deleteStartMs.load(std::memory_order_acquire) > 600) {
+            LOTUS_WARN("Replacement stuck (lag), force release");
+            finishReplacement();
         }
         if (current_backspace_count_ >= expected_backspaces_ && is_deleting_.load()) {
             finishReplacement();
@@ -983,7 +1084,7 @@ namespace fcitx {
             } else isPrevSpace_ = false;
         }
         switch (realMode) {
-            case LotusMode::Uinput: case LotusMode::Smooth: case LotusMode::Minecraft: handleUinputMode(keyEvent, currentSym); break;
+            case LotusMode::Uinput: case LotusMode::Smooth: case LotusMode::Minecraft: case LotusMode::FkUinput: handleUinputMode(keyEvent, currentSym); break;
             case LotusMode::SurroundingText: handleSurroundingText(keyEvent, currentSym); break;
             case LotusMode::Preedit:         handlePreeditMode(keyEvent, currentSym); break;
             case LotusMode::Emoji:           handleEmojiMode(keyEvent); break;

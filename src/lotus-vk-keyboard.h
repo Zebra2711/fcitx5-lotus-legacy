@@ -1,0 +1,63 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Zebra2711
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+#ifndef _FCITX5_LOTUS_VK_KEYBOARD_H_
+#define _FCITX5_LOTUS_VK_KEYBOARD_H_
+
+#include <deque>
+#include <utility>
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
+
+struct wl_display;
+struct wl_registry;
+struct wl_seat;
+struct zwp_virtual_keyboard_manager_v1;
+struct zwp_virtual_keyboard_v1;
+
+namespace fcitx {
+
+    /**
+     * Wayland zwp_virtual_keyboard_v1 helper (wtype-style).
+     *
+     * Sends BackSpace and Unicode on one virtual-keyboard channel so the
+     * compositor preserves order. A custom XKB keymap maps spare keycodes to
+     * the needed characters.
+     */
+    class LotusVkKeyboard {
+      public:
+        static LotusVkKeyboard& instance();
+
+        bool emit(int backspaces, std::string_view utf8, bool trackEcho = true);
+        bool injecting() const { return injecting_; }
+        bool consumeEcho(uint32_t code, uint32_t time);
+        bool available();
+
+      private:
+        LotusVkKeyboard() = default;
+        ~LotusVkKeyboard();
+        LotusVkKeyboard(const LotusVkKeyboard&)            = delete;
+        LotusVkKeyboard& operator=(const LotusVkKeyboard&) = delete;
+
+        bool ensureConnected();
+        bool uploadKeymap(const uint32_t* cps, size_t n);
+        void tap(uint32_t evdevKey, bool track);
+        void disconnect();
+
+        ::wl_display*                         display_  = nullptr;
+        ::wl_registry*                        registry_ = nullptr;
+        ::wl_seat*                            seat_     = nullptr;
+        ::zwp_virtual_keyboard_manager_v1*    manager_  = nullptr;
+        ::zwp_virtual_keyboard_v1*            keyboard_ = nullptr;
+        uint32_t                                   time_     = 1;
+        bool                                       injecting_ = false;
+        std::deque<std::pair<uint32_t, uint32_t>>  echo_;
+    };
+
+} // namespace fcitx
+
+#endif
