@@ -25,14 +25,25 @@
 #include <fcitx/userinterface.h>
 #include <algorithm>
 #include <string>
+#include <cstring>
+#include <cctype>
+
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <thread>
 #include <linux/input.h>
 #include <poll.h>
 
+#include <fcitx-utils/eventloopinterface.h>
+#include <fcitx-utils/event.h>
+#include <fcitx-utils/misc.h>
+#include <fcitx/instance.h>
+
 namespace fcitx {
     constexpr int      MAX_SCAN_LENGTH = 15;
+    constexpr int      kFastMs         = 60;
+    constexpr uint32_t kSpanMs         = 250;
+    static inline bool isFast(uint32_t start, uint32_t now, uint32_t threshold) { return static_cast<uint32_t>(now - start) <= threshold; }
     static std::atomic<int64_t> s_deleteStartMs{0};
     static inline bool isWordBreak(uint32_t ucs4) {
         if (__builtin_expect(ucs4 > 64, 1)) return false;
@@ -725,8 +736,23 @@ namespace fcitx {
         }
         return false;
     }
+
+    void LotusState::flushDeferred() {
+        deferTimer_.reset();
+        if (!deferred_) return;
+        deferred_ = false;
+        std::string del;
+        std::string add;
+        compareAndSplitStrings(oldPreBuffer_, pendingPreedit_, del, add);
+        if (!del.empty() || !add.empty()) performVkReplacement(del, add);
+        oldPreBuffer_ = pendingPreedit_;
+    }
     void LotusState::handleUinputMode(KeyEvent& keyEvent, KeySym currentSym) {
         LogTextInputCapabilities(ic_);
+        const int64_t nowT = now_ms();
+        const int64_t gap  = nowT - lastKeyMs_;
+        lastKeyMs_         = nowT;
+        if (deferred_ && (keyEvent.key().hasModifier() || isBackspace(currentSym) || currentSym == FcitxKey_Return || Key::keySymToUTF8(currentSym).empty())) flushDeferred();
         if (checkForwardSpecialKey(keyEvent, currentSym)) {
             keyEvent.forward();
             return;
@@ -757,6 +783,28 @@ namespace fcitx {
         std::string commitStr;
         std::string preeditStrBuf;
         bool        processed = lotusEngine_->processKeyEventAndPull(currentSym, keyEvent.rawKey().states(), &commitStr, &preeditStrBuf);
+        bool        defer = false;
+        const char  ch    = keyUtf8.size() == 1 ? keyUtf8[0] : 0;
+        const char  lc    = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+        const bool  vowel = lc != 0 && std::strchr("aeiouy", lc) != nullptr;
+        const bool  tone  = lc != 0 && std::strchr("sfrxjwz", lc) != nullptr;
+        const bool  dbl   = lc != 0 && lc == lastChar_;
+        const auto  now32 = static_cast<uint32_t>(nowT);
+        if (vkMode && processed && commitStr.empty() && !preeditStrBuf.empty()) {
+            if (vowel) defer = gap < kFastMs;
+            else if (lc == 'd' && dbl) defer = consonantStart_ != 0 && isFast(consonantStart_, now32, kSpanMs);
+            else if (tone || dbl) defer = vowelStart_ != 0 && isFast(vowelStart_, now32, kSpanMs);
+        }
+        const bool  hadDeferred = deferred_;
+        if (!defer && deferred_) {
+            if (!processed) flushDeferred();
+            else { deferred_ = false; deferTimer_.reset(); }
+        }
+        if (ch == 0 || !std::isalnum(static_cast<unsigned char>(ch))) { vowelStart_ = 0; consonantStart_ = 0; }
+        else if (vowel) { if (!lastVowel_) vowelStart_ = now32; }
+        else if (lc == 'd' && !dbl) consonantStart_ = now32;
+        lastVowel_ = vowel;
+        lastChar_  = lc;
         if (!commitStr.empty()) {
             std::string deletedPart;
             std::string addedPart;
@@ -771,7 +819,7 @@ namespace fcitx {
                 bool wasAutoCapitalized = (currentSym != keyEvent.rawKey().sym());
                 if (!addedPart.empty() && (keyUtf8 != addedPart || wasAutoCapitalized)) {
                     // Prevent auto-capitalized character replacement from stripping out Vietnamese chars
-                    if (addedPart.size() > 1 && addedPart.back() == ' ')
+                    if (!hadDeferred && addedPart.size() > 1 && addedPart.back() == ' ')
                         // Stripping the trigger key (space) from addedPart
 #if __cplusplus >= 202002L
                         addedPart.resize(addedPart.size() - 1);
@@ -805,6 +853,16 @@ namespace fcitx {
         hasHistory_ = true;
         realtextLen.fetch_add(1, std::memory_order_acq_rel);
         std::string preeditStr = preeditStrBuf;
+        if (defer) {
+            keyEvent.filterAndAccept();
+            deferred_       = true;
+            pendingPreedit_ = preeditStr;
+            deferTimer_     = engine_->instance()->eventLoop().addTimeEvent(CLOCK_MONOTONIC, now(CLOCK_MONOTONIC) + kFastMs * 1000, 0, [this](EventSourceTime*, uint64_t) {
+                flushDeferred();
+                return false;
+            });
+            return;
+        }
         std::string deletedPart;
         std::string addedPart;
         wa_flag = false; // too bad
@@ -1147,6 +1205,12 @@ namespace fcitx {
     void LotusState::clearAllBuffers() {
         LOTUS_DEBUG("Clear all buffers");
         if (is_deleting_.load(std::memory_order_acquire)) return;
+        deferred_ = false;
+        deferTimer_.reset();
+        vowelStart_ = 0;
+        consonantStart_ = 0;
+        lastChar_ = 0;
+        lastVowel_ = false;
         oldPreBuffer_.clear();
         hasHistory_              = false;
         expected_backspaces_     = 0;

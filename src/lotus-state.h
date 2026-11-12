@@ -26,7 +26,7 @@
 
 #include <atomic>
 #include <memory>
-
+#include <fcitx-utils/event.h>
 struct EmojiEntry;
 
 namespace fcitx {
@@ -115,6 +115,16 @@ namespace fcitx {
         int                                wa_commit_delay_ms  = 5;
         bool                               surrtp              = false;
         bool                               isTerm              = false;
+
+        std::unique_ptr<EventSourceTime> deferTimer_;
+        std::string                      pendingPreedit_;
+        bool                             deferred_  = false;
+        int64_t                          lastKeyMs_ = 0;
+        uint32_t                         vowelStart_ = 0;
+        uint32_t                         consonantStart_ = 0;
+        char                             lastChar_ = 0;
+        bool                             lastVowel_ = false;
+        void                             flushDeferred();
 
         /**
          * @brief Connects to the uinput server.
