@@ -615,6 +615,7 @@ namespace fcitx {
     }
 
     void LotusEngine::keyEvent(const InputMethodEntry& /*entry*/, KeyEvent& keyEvent) {
+        LOTUS_INFO("key sym=" + std::to_string(static_cast<int>(keyEvent.key().sym())) + " states=" + std::to_string(static_cast<uint32_t>(keyEvent.key().states())) + " release=" + std::to_string(keyEvent.isRelease()));
         auto* ic = keyEvent.inputContext();
         if (ic == nullptr) {
             return;

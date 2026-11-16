@@ -332,6 +332,7 @@ namespace fcitx {
 
     bool LotusWlrVirtualKeyboard::emitImpl(int count, std::string_view utf8, bool trackEcho, bool anchorDot) {
         count = std::max(count, 0);
+        LOTUS_INFO("wlr emit count=" + std::to_string(count) + " utf8=" + std::string(utf8));
         std::vector<uint32_t> cps;
         if (!utf8.empty()) {
             if (!utf8::validate(utf8)) {

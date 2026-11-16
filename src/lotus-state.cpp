@@ -518,6 +518,7 @@ namespace fcitx {
             if (!echoDriven) {
                 auto&             wlr     = LotusWlrVirtualKeyboard::instance();
                 auto              emitNow = [&wlr, burstCount, addedUtf8, dotAnchor] { return wlr.emit(burstCount, addedUtf8, true, dotAnchor); };
+                LOTUS_INFO("dbg: del=" + std::to_string(delSize) + " burst=" + std::to_string(burstCount) + " autofill=" + std::to_string(autofill) + " select=" + std::to_string(uinputSelect) + " preDelay=" + std::to_string(preDelay) + " add=[" + addedUtf8 + "] mode=" + std::to_string(static_cast<int>(currentMode())));
                 const std::string wlrLog  = "wlr-virtual-keyboard: sent " + std::to_string(burstCount) + " backspaces + keys for [" + addedUtf8 + "]";
                 if (preDelay > 0) {
                     wlr.runAfter(static_cast<int>(preDelay), emitNow);
@@ -1055,6 +1056,7 @@ namespace fcitx {
         if (injectionBackend_ != InjectionBackend::X11Test) {
             auto& vk = LotusWlrVirtualKeyboard::instance();
             if (vk.injecting()) {
+                LOTUS_INFO("dbg: key swallowed while injecting, code=" + std::to_string(keyEvent.rawKey().code()));
                 keyEvent.filterAndAccept();
                 return true;
             }
