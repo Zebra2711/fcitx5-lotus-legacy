@@ -483,11 +483,6 @@ namespace fcitx {
             return;
         }
 
-        const size_t delSize     = graphemeClusterCount(diffPart.deletedPart);
-        const bool   dotAnchor   = currentMode() == LotusMode::Smooth;
-        const size_t deleteCount = delSize + (dotAnchor ? 1U : 0U);
-        const int    burstCount  = static_cast<int>(deleteCount);
-
         const int    commitMs = clampDelay(appRuleSetting_.commitInterval > 0 ? appRuleSetting_.commitInterval : *engine_.config().defaultCommitInterval);
         const auto   interval =
             static_cast<uint32_t>(clampDelay(appRuleSetting_.backspaceInterval > 0 ? appRuleSetting_.backspaceInterval : *engine_.config().defaultBackspaceInterval));
@@ -508,6 +503,10 @@ namespace fcitx {
 
         const std::string frontend     = getFrontendName(&ic_);
         const bool        echoFrontend = frontend == "dbus" || frontend == "fcitx4" || frontend == "x11" || frontend == "xim";
+        const size_t      delSize      = echoFrontend ? diffPart.deletedPart.size() : graphemeClusterCount(diffPart.deletedPart);
+        const bool        dotAnchor    = currentMode() == LotusMode::Smooth;
+        const size_t      deleteCount  = delSize + (dotAnchor ? 1U : 0U);
+        const int         burstCount   = static_cast<int>(deleteCount);
         const std::string addedUtf8    = lotus::utf8::encode(diffPart.addedPart);
         const bool        x11Backend   = !vkUsable() && x11Usable();
         bool              echoDriven   = false;
@@ -518,7 +517,7 @@ namespace fcitx {
             if (!echoDriven) {
                 auto&             wlr     = LotusWlrVirtualKeyboard::instance();
                 auto              emitNow = [&wlr, burstCount, addedUtf8, dotAnchor] { return wlr.emit(burstCount, addedUtf8, true, dotAnchor); };
-                LOTUS_INFO("dbg: del=" + std::to_string(delSize) + " burst=" + std::to_string(burstCount) + " autofill=" + std::to_string(autofill) + " select=" + std::to_string(uinputSelect) + " preDelay=" + std::to_string(preDelay) + " add=[" + addedUtf8 + "] mode=" + std::to_string(static_cast<int>(currentMode())));
+                LOTUS_INFO("dbg: del=" + std::to_string(delSize) + " burst=" + std::to_string(burstCount) + " preDelay=" + std::to_string(preDelay) + " add=[" + addedUtf8 + "] mode=" + std::to_string(static_cast<int>(currentMode())));
                 const std::string wlrLog  = "wlr-virtual-keyboard: sent " + std::to_string(burstCount) + " backspaces + keys for [" + addedUtf8 + "]";
                 if (preDelay > 0) {
                     wlr.runAfter(static_cast<int>(preDelay), emitNow);
@@ -529,7 +528,7 @@ namespace fcitx {
                     LOTUS_INFO(wlrLog);
                     return;
                 }
-                LOTUS_WARN("wlr-virtual-keyboard emit failed, fallback use uinput");
+                LOTUS_WARN("wlr-virtual-keyboard emit failed");
             } else {
                 injectionBackend_ = InjectionBackend::WlrVirtualKeyboard;
             }
