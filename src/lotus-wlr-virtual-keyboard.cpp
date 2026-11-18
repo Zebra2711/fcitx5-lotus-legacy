@@ -297,20 +297,11 @@ namespace fcitx {
             return;
         }
         zwp_virtual_keyboard_v1_modifiers(keyboard_.get(), down ? kShiftMod : 0, 0, 0, 0);
-        // Flush a standalone modifiers request; otherwise it would sit in the
-        // connection buffer until the next keymap upload and the compositor
-        // would keep the old (shifted) state.
         wl_display_flush(display_.get());
     }
 
     void LotusWlrVirtualKeyboard::setUserShift(bool down) {
         userShift_.store(down, std::memory_order_release);
-        // Keep the compositor-side modifier state in lockstep with the physical
-        // keyboard. Without this, releasing Shift after an injected replacement
-        // leaves the virtual keyboard shifted and later typed keys get upcased.
-        // emitImpl holds the same lock, so this either runs before an injection
-        // (the upload then mirrors the new state) or after it (the final setShift
-        // already restored userShift_); the device always ends up in sync.
         std::scoped_lock lock(deviceMutex_);
         setShift(down);
     }
@@ -397,8 +388,6 @@ namespace fcitx {
             pos += n;
         }
         injecting_.store(false, std::memory_order_release);
-        // The user may have pressed or released Shift while the burst was in
-        // flight. Leave the device in the state the physical keyboard is in now.
         setShift(userShift_.load(std::memory_order_acquire));
         if (!ok) {
             echo_.clear();

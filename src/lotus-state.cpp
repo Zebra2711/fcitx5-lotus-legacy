@@ -639,7 +639,6 @@ namespace fcitx {
             return;
         }
 
-        const size_t delSize      = graphemeClusterCount(diffPart.deletedPart);
         const bool   autofill     = isAutofillCertain(ic_.surroundingText());
         const bool   addressBar   = isChromium_ && (ic_.capabilityFlags().test(CapabilityFlag::Url) || engine_.isLikeAddressBarChromium());
         const bool   uinputSelect = (currentMode() == LotusMode::Select && !autofill) || (isUinputMode(currentMode()) && addressBar);
@@ -664,6 +663,7 @@ namespace fcitx {
 
         const std::string frontend     = getFrontendName(&ic_);
         const bool        echoFrontend = frontend == "dbus" || frontend == "fcitx4" || frontend == "x11" || frontend == "xim";
+        const size_t      delSize      = echoFrontend ? diffPart.deletedPart.size() : graphemeClusterCount(diffPart.deletedPart);
         const std::string addedUtf8    = lotus::utf8::encode(diffPart.addedPart);
         const int         burstCount   = static_cast<int>(delSize) + ((currentMode() != LotusMode::SuperSmooth && autofill) ? 1 : 0);
         const bool        x11Backend   = !vkUsable() && x11Usable();
@@ -695,7 +695,7 @@ namespace fcitx {
                     LOTUS_INFO(wlrLog);
                     return;
                 }
-                LOTUS_WARN("wlr-virtual-keyboard emit failed, fallback use uinput");
+                LOTUS_WARN("wlr-virtual-keyboard emit failed");
             } else {
                 injectionBackend_ = InjectionBackend::WlrVirtualKeyboard;
             }
