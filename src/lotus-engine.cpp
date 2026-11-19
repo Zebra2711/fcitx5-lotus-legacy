@@ -235,16 +235,15 @@ namespace fcitx {
         setMode(config_.mode.value(), nullptr);
         checkServerForMode(config_.mode.value());
         instance_.inputContextManager().registerProperty("LotusState", &factory_);
-        surroundingTextWatcher_ =
-            instance_.watchEvent<EventType::InputContextSurroundingTextUpdated>(EventWatcherPhase::PreInputMethod, [this](SurroundingTextUpdatedEvent& event) {
-                auto* ic = event.inputContext();
-                if (ic != nullptr && ic->hasFocus()) {
-                    if (auto* state = ic->propertyFor(&factory_)) {
-                        state->syncSurroundingText();
-                    }
+        surroundingTextWatcher_ = instance_.watchEvent(EventType::InputContextSurroundingTextUpdated, EventWatcherPhase::PreInputMethod, [this](Event& event) {
+            auto* ic = static_cast<SurroundingTextUpdatedEvent&>(event).inputContext();
+            if (ic != nullptr && ic->hasFocus()) {
+                if (auto* state = ic->propertyFor(&factory_)) {
+                    state->syncSurroundingText();
                 }
-            });
-        appRulesPath_ = configDir + "/lotus-app-rules.conf";
+            }
+        });
+        appRulesPath_           = configDir + "/lotus-app-rules.conf";
         loadAppRules();
         toggleActions_ = {
             charsetAction_.get(),          spellCheckAction_.get(),       macroAction_.get(),    capitalizeMacroAction_.get(),
