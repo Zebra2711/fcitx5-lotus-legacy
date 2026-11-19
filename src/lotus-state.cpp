@@ -185,6 +185,7 @@ namespace fcitx {
         const std::u32string text = lotus::utf8::decode(surrounding.text());
         const std::u32string previous = lastSurroundingText_;
         lastSurroundingText_ = text;
+        LOTUS_INFO("Surrounding text updated: " + describeSurroundingText(&ic_));
 
         if (currentMode() != LotusMode::Preedit) {
             return;
@@ -228,6 +229,7 @@ namespace fcitx {
         const std::u32string preeditText = pullPreeditString();
         if (!preeditText.empty()) {
             Text text = lotus::fcitx_text::toText(preeditText);
+            LOTUS_INFO("Preedit TextFormatFlags: " + describeTextFormatFlags(text.formatAt(0)));
             if (ic_.capabilityFlags().test(CapabilityFlag::Preedit))
                 ic_.inputPanel().setClientPreedit(text);
             else
@@ -413,6 +415,7 @@ namespace fcitx {
             Text preeditText;
             preeditText.append(lotus::utf8::encode(emojiBuffer_), TextFormatFlag::Underline);
             preeditText.setCursor(static_cast<int>(preeditText.textLength()));
+            LOTUS_INFO("Emoji preedit TextFormatFlags: " + describeTextFormatFlags(preeditText.formatAt(0)));
             ic_.inputPanel().setPreedit(preeditText);
         } else {
             ic_.inputPanel().setClientPreedit(Text());

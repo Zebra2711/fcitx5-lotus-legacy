@@ -16,6 +16,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <fcitx-utils/textformatflags.h>
 #include <string>
 #include <string_view>
 #include <sys/socket.h>
@@ -181,6 +182,20 @@ LOTUS_EXPORT size_t graphemeClusterCount(std::u32string_view text);
  * @return Frontend name.
  */
 std::string getFrontendName(fcitx::InputContext* ic);
+
+/**
+ * @brief Render the current surrounding text for diagnostics.
+ * @param ic Input context.
+ * @return Text, cursor and anchor, or "invalid" when the client does not support it.
+ */
+std::string describeSurroundingText(const fcitx::InputContext* ic);
+
+/**
+ * @brief Render text format flags for diagnostics.
+ * @param flags Text format flags.
+ * @return Comma separated flag names, or "none" when no flag is set.
+ */
+std::string describeTextFormatFlags(fcitx::TextFormatFlags flags);
 
 /**
  * @brief Key event entry for replay buffer.

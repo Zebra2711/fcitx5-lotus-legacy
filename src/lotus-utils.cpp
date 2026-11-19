@@ -168,6 +168,44 @@ std::string getFrontendName(fcitx::InputContext* ic) {
     return ic->frontend();
 }
 
+std::string describeSurroundingText(const fcitx::InputContext* ic) {
+    if (ic == nullptr) {
+        return "invalid";
+    }
+    const auto& surrounding = ic->surroundingText();
+    if (!surrounding.isValid()) {
+        return "invalid";
+    }
+    return "text=[" + surrounding.text() + "] cursor=" + std::to_string(surrounding.cursor()) + " anchor=" + std::to_string(surrounding.anchor());
+}
+
+std::string describeTextFormatFlags(fcitx::TextFormatFlags flags) {
+    struct Entry {
+        fcitx::TextFormatFlag flag;
+        const char*             name;
+    };
+    // NoFlag is omitted on purpose: Flags::test(NoFlag) is always true.
+    static constexpr Entry entries[] = {
+        {fcitx::TextFormatFlag::Underline, "Underline"},
+        {fcitx::TextFormatFlag::HighLight, "HighLight"},
+        {fcitx::TextFormatFlag::DontCommit, "DontCommit"},
+        {fcitx::TextFormatFlag::Bold, "Bold"},
+        {fcitx::TextFormatFlag::Strike, "Strike"},
+        {fcitx::TextFormatFlag::Italic, "Italic"},
+    };
+    std::string out;
+    for (const auto& entry : entries) {
+        if (!flags.test(entry.flag)) {
+            continue;
+        }
+        if (!out.empty()) {
+            out += ", ";
+        }
+        out += entry.name;
+    }
+    return out.empty() ? "none" : out;
+}
+
 std::string getEnv(const std::string& name) {
     const char* value = std::getenv(name.c_str());
     return ((value != nullptr) && ((*value) != 0)) ? value : "";
