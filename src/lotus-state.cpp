@@ -232,6 +232,11 @@ namespace fcitx {
         if (currentMode() != LotusMode::Preedit) {
             return;
         }
+        // LibreOffice mirrors the active preedit back into the surrounding text
+        // on every key, so an extra occurrence there is not a client-side commit.
+        if (isLibreoffice_) {
+            return;
+        }
         const std::u32string preedit = pullPreeditString();
         if (preedit.empty()) {
             return;
