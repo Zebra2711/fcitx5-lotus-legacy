@@ -1125,6 +1125,9 @@ namespace fcitx {
     }
 
     void LotusState::keyEvent(KeyEvent& keyEvent) {
+        if (!keyEvent.isRelease()) {
+            lastKeyTime_ = nowMs();
+        }
         trackShiftModifier(keyEvent);
         if (handleKeyEventGuards(keyEvent))
             return;
