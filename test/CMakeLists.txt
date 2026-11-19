@@ -140,6 +140,7 @@ add_lotus_headless_test(TARGET anchor_key_protocol SOURCES anchor-key-protocol.c
 add_lotus_headless_test(TARGET uinput_server_probe SOURCES uinput-server-probe.cpp LABELS "unit;server")
 add_lotus_headless_test(TARGET preedit_backspace SOURCES preedit-backspace.cpp LABELS "integration;preedit")
 add_lotus_headless_test(TARGET mode_dot_anchor SOURCES mode-dot-anchor.cpp LABELS "integration;uinput")
+add_lotus_headless_test(TARGET preedit_click_commit SOURCES preedit-click-commit.cpp LABELS "integration;preedit")
 add_lotus_headless_test(TARGET replacement_delays SOURCES replacement-delays.cpp LABELS "integration;smooth")
 add_lotus_headless_test(TARGET merged_replacement_commit SOURCES merged-replacement-commit.cpp LABELS "integration;smooth")
 add_lotus_headless_test(TARGET dict_reload SOURCES dict-reload.cpp LABELS "integration;dictionary")

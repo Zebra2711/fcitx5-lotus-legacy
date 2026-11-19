@@ -223,6 +223,15 @@ namespace fcitx {
         setMode(config_.mode.value(), nullptr);
         checkServerForMode(config_.mode.value());
         instance_.inputContextManager().registerProperty("LotusState", &factory_);
+        surroundingTextWatcher_ = instance_.watchEvent<EventType::InputContextSurroundingTextUpdated>(
+            EventWatcherPhase::PreInputMethod, [this](SurroundingTextUpdatedEvent& event) {
+                auto* ic = event.inputContext();
+                if (ic != nullptr && ic->hasFocus()) {
+                    if (auto* state = ic->propertyFor(&factory_)) {
+                        state->syncSurroundingText();
+                    }
+                }
+            });
         appRulesPath_ = configDir + "/lotus-app-rules.conf";
         loadAppRules();
         toggleActions_ = {
@@ -456,6 +465,7 @@ namespace fcitx {
             state->flushDeferredFocusOut();
             setMode(targetMode, event.inputContext());
         }
+        state->rememberSurroundingText();
         if (event.type() == EventType::InputContextFocusIn && isDbus && !surrvalid) {
             LOTUS_INFO("Skip clearAllBuffers");
         } else if (surrvalid && !state->oldPreBuffer_.empty() && (nowMs() - state->lastDeactivateTime_) >= 100) {
