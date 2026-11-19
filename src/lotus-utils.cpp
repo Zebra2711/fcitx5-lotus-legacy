@@ -198,31 +198,66 @@ std::string describeSurroundingText(const fcitx::InputContext* ic) {
     return "text=[" + surrounding.text() + "] cursor=" + std::to_string(surrounding.cursor()) + " anchor=" + std::to_string(surrounding.anchor());
 }
 
+std::string describeCapabilityFlags(fcitx::CapabilityFlags flags) {
+    return describeFlags(flags,
+                         {
+                             {fcitx::CapabilityFlag::ClientSideUI, "ClientSideUI"},
+                             {fcitx::CapabilityFlag::Preedit, "Preedit"},
+                             {fcitx::CapabilityFlag::ClientSideControlState, "ClientSideControlState"},
+                             {fcitx::CapabilityFlag::Password, "Password"},
+                             {fcitx::CapabilityFlag::FormattedPreedit, "FormattedPreedit"},
+                             {fcitx::CapabilityFlag::ClientUnfocusCommit, "ClientUnfocusCommit"},
+                             {fcitx::CapabilityFlag::SurroundingText, "SurroundingText"},
+                             {fcitx::CapabilityFlag::Email, "Email"},
+                             {fcitx::CapabilityFlag::Digit, "Digit"},
+                             {fcitx::CapabilityFlag::Uppercase, "Uppercase"},
+                             {fcitx::CapabilityFlag::Lowercase, "Lowercase"},
+                             {fcitx::CapabilityFlag::NoAutoUpperCase, "NoAutoUpperCase"},
+                             {fcitx::CapabilityFlag::Url, "Url"},
+                             {fcitx::CapabilityFlag::Dialable, "Dialable"},
+                             {fcitx::CapabilityFlag::Number, "Number"},
+                             {fcitx::CapabilityFlag::NoOnScreenKeyboard, "NoOnScreenKeyboard"},
+                             {fcitx::CapabilityFlag::SpellCheck, "SpellCheck"},
+                             {fcitx::CapabilityFlag::NoSpellCheck, "NoSpellCheck"},
+                             {fcitx::CapabilityFlag::WordCompletion, "WordCompletion"},
+                             {fcitx::CapabilityFlag::UppercaseWords, "UppercaseWords"},
+                             {fcitx::CapabilityFlag::UppwercaseSentences, "UppwercaseSentences"},
+                             {fcitx::CapabilityFlag::Alpha, "Alpha"},
+                             {fcitx::CapabilityFlag::Name, "Name"},
+                             {fcitx::CapabilityFlag::GetIMInfoOnFocus, "GetIMInfoOnFocus"},
+                             {fcitx::CapabilityFlag::RelativeRect, "RelativeRect"},
+                             {fcitx::CapabilityFlag::Terminal, "Terminal"},
+                             {fcitx::CapabilityFlag::Date, "Date"},
+                             {fcitx::CapabilityFlag::Time, "Time"},
+                             {fcitx::CapabilityFlag::Multiline, "Multiline"},
+                             {fcitx::CapabilityFlag::Sensitive, "Sensitive"},
+                             {fcitx::CapabilityFlag::KeyEventOrderFix, "KeyEventOrderFix"},
+                             {fcitx::CapabilityFlag::ReportKeyRepeat, "ReportKeyRepeat"},
+                             {fcitx::CapabilityFlag::ClientSideInputPanel, "ClientSideInputPanel"},
+                             {fcitx::CapabilityFlag::Disable, "Disable"},
+                             {fcitx::CapabilityFlag::CommitStringWithCursor, "CommitStringWithCursor"},
+                             {fcitx::CapabilityFlag::PasswordOrSensitive, "PasswordOrSensitive"},
+                         });
+}
+
 std::string describeTextFormatFlags(fcitx::TextFormatFlags flags) {
-    struct Entry {
-        fcitx::TextFormatFlag flag;
-        const char*             name;
-    };
-    // NoFlag is omitted on purpose: Flags::test(NoFlag) is always true.
-    static constexpr Entry entries[] = {
-        {fcitx::TextFormatFlag::Underline, "Underline"},
-        {fcitx::TextFormatFlag::HighLight, "HighLight"},
-        {fcitx::TextFormatFlag::DontCommit, "DontCommit"},
-        {fcitx::TextFormatFlag::Bold, "Bold"},
-        {fcitx::TextFormatFlag::Strike, "Strike"},
-        {fcitx::TextFormatFlag::Italic, "Italic"},
-    };
-    std::string out;
-    for (const auto& entry : entries) {
-        if (!flags.test(entry.flag)) {
-            continue;
-        }
-        if (!out.empty()) {
-            out += ", ";
-        }
-        out += entry.name;
-    }
-    return out.empty() ? "none" : out;
+    return describeFlags(flags,
+                         {
+                             {fcitx::TextFormatFlag::Underline, "Underline"},
+                             {fcitx::TextFormatFlag::HighLight, "HighLight"},
+                             {fcitx::TextFormatFlag::DontCommit, "DontCommit"},
+                             {fcitx::TextFormatFlag::Bold, "Bold"},
+                             {fcitx::TextFormatFlag::Strike, "Strike"},
+                             {fcitx::TextFormatFlag::Italic, "Italic"},
+                         });
+}
+
+std::string describeInputBufferOptions(fcitx::InputBufferOptions options) {
+    return describeFlags(options,
+                         {
+                             {fcitx::InputBufferOption::AsciiOnly, "AsciiOnly"},
+                             {fcitx::InputBufferOption::FixedCursor, "FixedCursor"},
+                         });
 }
 
 std::string getEnv(const std::string& name) {

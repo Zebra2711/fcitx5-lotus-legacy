@@ -380,8 +380,10 @@ namespace fcitx {
         const std::u32string preeditText = pullPreeditString();
         if (!preeditText.empty()) {
             Text text = lotus::fcitx_text::toText(preeditText);
-            LOTUS_INFO("Preedit TextFormatFlags: " + describeTextFormatFlags(text.formatAt(0)));
-            if (ic_.capabilityFlags().test(CapabilityFlag::Preedit))
+            const bool clientPreedit    = ic_.capabilityFlags().test(CapabilityFlag::Preedit);
+            const bool formattedPreedit = ic_.capabilityFlags().test(CapabilityFlag::FormattedPreedit);
+            LOTUS_INFO("Preedit TextFormatFlags: " + describeTextFormatFlags(text.formatAt(0)) + " (path=" + (clientPreedit ? "client" : "input-panel") + ", FormattedPreedit=" + (formattedPreedit ? "yes" : "no") + ")");
+            if (clientPreedit)
                 ic_.inputPanel().setClientPreedit(text);
             else
                 ic_.inputPanel().setPreedit(text);
