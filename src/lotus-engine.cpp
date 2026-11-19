@@ -29,6 +29,7 @@
 #include "macro_table.h"
 #include "utf8.h"
 
+#include <exception>
 #include <optional>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -39,6 +40,10 @@
 #include <fcitx/userinterfacemanager.h>
 #include <fcitx-utils/event.h>
 #include <fcitx-utils/utf8.h>
+#if LOTUS_USE_MAPPED_BUFFER
+#include <fcitx-utils/mappedbuffer.h>
+#include <fcitx-utils/unixfd.h>
+#endif
 
 #include <algorithm>
 #include <array>
@@ -313,7 +318,23 @@ namespace fcitx {
         // Go read the descriptor handed to it; the port reads the same descriptor into the text
         // Dictionary::loadFromText expects.
         auto loadFromFd = [&dictionary](int rawFd) {
-            FdGuard                fd(rawFd);
+            FdGuard fd(rawFd);
+#if LOTUS_USE_MAPPED_BUFFER
+            std::optional<fcitx::MappedBuffer> mapped;
+            try {
+                // UnixFD dups rawFd, so FdGuard keeps ownership of the original.
+                fcitx::UnixFD unixFd(fd.get());
+                mapped.emplace(unixFd);
+            } catch (const std::exception& e) {
+                LOTUS_WARN("Failed to map dictionary, falling back to read: " + std::string(e.what()));
+            }
+            if (mapped) {
+                if (mapped->size() > 0) {
+                    dictionary->loadFromText({reinterpret_cast<const char*>(mapped->data()), mapped->size()});
+                }
+                return;
+            }
+#endif
             std::string            contents;
             std::array<char, 4096> buffer{};
             for (ssize_t count = ::read(fd.get(), buffer.data(), buffer.size()); count > 0; count = ::read(fd.get(), buffer.data(), buffer.size())) {
