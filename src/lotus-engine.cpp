@@ -474,6 +474,8 @@ namespace fcitx {
         LOTUS_INFO("Frontend: " + getFrontendName(ic));
         LogTextInputCapabilities(ic);
         LOTUS_INFO("Surrounding text: " + describeSurroundingText(ic));
+        // A new activation (including another window of the same app) starts a new key log.
+        state->resetKeyLog();
 
         const LotusMode targetMode = getAppRule(appName);
         LOTUS_INFO("Target mode: " + LotusModeI18NAnnotation::toString(targetMode));

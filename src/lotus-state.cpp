@@ -1169,6 +1169,14 @@ namespace fcitx {
             }
         }
         KeySym currentSym = keyEvent.rawKey().sym();
+        if (!g_isDeleting.load(std::memory_order_acquire)) {
+            const KeyStates states = keyEvent.rawKey().states();
+            // Shortcuts are not text input; Shift alone still produces a character.
+            if (!states.testAny(KeyState::Ctrl_Alt) && !states.testAny(KeyState::Super) && !states.testAny(KeyState::Super2) && !states.testAny(KeyState::Hyper) &&
+                !states.testAny(KeyState::Meta)) {
+                appendKeyLog(currentSym);
+            }
+        }
         applyAutoCapitalize(keyEvent, currentSym);
 
         if (handleKeyWhileDeleting(keyEvent, currentSym))
@@ -1182,6 +1190,40 @@ namespace fcitx {
 
         handleActiveMode(keyEvent, currentSym);
         reEnableMacroAfterWordEnd();
+    }
+
+    void LotusState::resetKeyLog() {
+        keyLog_.clear();
+    }
+
+    void LotusState::appendKeyLog(KeySym sym) {
+        if (isBackspace(sym)) {
+            if (keyLog_.empty()) {
+                return;
+            }
+            // Drop the last UTF-8 code point.
+            std::size_t start = keyLog_.size() - 1;
+            while (start > 0 && (static_cast<unsigned char>(keyLog_[start]) & 0xC0U) == 0x80U) {
+                --start;
+            }
+            keyLog_.erase(start);
+        } else {
+            const std::string text = Key::keySymToUTF8(sym);
+            if (text.empty()) {
+                return;
+            }
+            keyLog_ += text;
+            // Keep the tail only; the log is diagnostic and must not grow forever.
+            constexpr std::size_t kMaxKeyLogBytes = 256;
+            if (keyLog_.size() > kMaxKeyLogBytes) {
+                std::size_t start = keyLog_.size() - kMaxKeyLogBytes;
+                while (start < keyLog_.size() && (static_cast<unsigned char>(keyLog_[start]) & 0xC0U) == 0x80U) {
+                    ++start;
+                }
+                keyLog_.erase(0, start);
+            }
+        }
+        LOTUS_INFO("keylog:\"" + keyLog_ + "\"");
     }
 
     void LotusState::ensureUinputConnection() {

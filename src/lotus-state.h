@@ -80,6 +80,11 @@ namespace fcitx {
         void keyEvent(KeyEvent& keyEvent);
 
         /**
+         * @brief Clears the diagnostic key log when the focused application changes.
+         */
+        void resetKeyLog();
+
+        /**
          * @brief Resets the input state.
          * @param isFocusOut If true, the reset comes from a focus-out event. Focus-out never commits text: fcitx5 core or the client (CapabilityFlag::ClientUnfocusCommit) owns that commit.
          */
@@ -154,6 +159,7 @@ namespace fcitx {
         LotusAppRuleSetting                   appRuleSetting_;                ///< Per-app rule (mode + delay overrides) pushed by the engine
         fcitx::InputBuffer                    emojiBuffer_{fcitx::InputBufferOption::FixedCursor}; ///< Emoji query buffer; cursor stays at the end
         std::vector<EmojiEntry>               emojiCandidates_;
+        std::string                           keyLog_; ///< Raw keys typed since the app changed, for diagnostics
         KeyBuffer                             bufferedKeys_; ///< Keystrokes buffered during replacement
         bool                                  isPrevSpace_           = false;
         bool                                  isPrevHyphen_          = false;
@@ -277,6 +283,12 @@ namespace fcitx {
          * @return True when the event must not be processed any further.
          */
         bool handleKeyEventGuards(KeyEvent& keyEvent);
+
+        /**
+         * @brief Appends a typed key to the diagnostic key log.
+         * @param sym Key symbol of the key press.
+         */
+        void appendKeyLog(KeySym sym);
 
         /**
          * @brief Reconnects to the uinput server when the client socket is not open.
