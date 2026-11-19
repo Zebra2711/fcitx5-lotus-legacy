@@ -478,6 +478,8 @@ namespace fcitx {
         LOTUS_INFO("Frontend: " + getFrontendName(ic));
         LogTextInputCapabilities(ic);
         LOTUS_INFO("Surrounding text: " + describeSurroundingText(ic));
+        // A new activation (including another window of the same app) starts a new key log.
+        state->resetKeyLog();
 
         instance_.inputContextManager().foreach ([this, ic](InputContext* other) {
             if (other != ic) {
