@@ -53,7 +53,7 @@ namespace fcitx {
         }
     } // namespace
 
-    int               clampDelay(int value) {
+    int clampDelay(int value) {
         return std::clamp(value, kMinDelayMs, kMaxDelayMs);
     }
 
@@ -183,9 +183,9 @@ namespace fcitx {
         if (!surrounding.isValid()) {
             return;
         }
-        const std::u32string text = lotus::utf8::decode(surrounding.text());
+        const std::u32string text     = lotus::utf8::decode(surrounding.text());
         const std::u32string previous = lastSurroundingText_;
-        lastSurroundingText_ = text;
+        lastSurroundingText_          = text;
         LOTUS_INFO("Surrounding text updated: " + describeSurroundingText(&ic_));
 
         if (currentMode() != LotusMode::Preedit) {
@@ -229,10 +229,11 @@ namespace fcitx {
         ic_.inputPanel().reset();
         const std::u32string preeditText = pullPreeditString();
         if (!preeditText.empty()) {
-            Text text = lotus::fcitx_text::toText(preeditText);
+            Text       text             = lotus::fcitx_text::toText(preeditText);
             const bool clientPreedit    = ic_.capabilityFlags().test(CapabilityFlag::Preedit);
             const bool formattedPreedit = ic_.capabilityFlags().test(CapabilityFlag::FormattedPreedit);
-            LOTUS_INFO("Preedit TextFormatFlags: " + describeTextFormatFlags(text.formatAt(0)) + " (path=" + (clientPreedit ? "client" : "input-panel") + ", FormattedPreedit=" + (formattedPreedit ? "yes" : "no") + ")");
+            LOTUS_INFO("Preedit TextFormatFlags: " + describeTextFormatFlags(text.formatAt(0)) + " (path=" + (clientPreedit ? "client" : "input-panel") +
+                       ", FormattedPreedit=" + (formattedPreedit ? "yes" : "no") + ")");
             if (clientPreedit)
                 ic_.inputPanel().setClientPreedit(text);
             else
@@ -539,8 +540,8 @@ namespace fcitx {
             return;
         }
 
-        const int    commitMs = clampDelay(appRuleSetting_.commitInterval > 0 ? appRuleSetting_.commitInterval : *engine_.config().defaultCommitInterval);
-        const auto   interval =
+        const int  commitMs = clampDelay(appRuleSetting_.commitInterval > 0 ? appRuleSetting_.commitInterval : *engine_.config().defaultCommitInterval);
+        const auto interval =
             static_cast<uint32_t>(clampDelay(appRuleSetting_.backspaceInterval > 0 ? appRuleSetting_.backspaceInterval : *engine_.config().defaultBackspaceInterval));
         const auto postDelay = static_cast<uint32_t>(clampDelay(appRuleSetting_.postDelay > 0 ? appRuleSetting_.postDelay : *engine_.config().defaultPostDelay));
 

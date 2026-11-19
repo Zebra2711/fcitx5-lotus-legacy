@@ -66,7 +66,7 @@ namespace fcitx {
     // focus move (e.g. clicking another field) happens once typing has settled.
     constexpr int64_t FocusBounceWindowMs = 100;
 
-    EmojiLoader&          LotusEngine::emojiLoader() {
+    EmojiLoader&      LotusEngine::emojiLoader() {
         if (!emojiLoader_) {
             emojiLoader_ = std::make_unique<EmojiLoader>(&instance_.addonManager());
         }
@@ -231,8 +231,8 @@ namespace fcitx {
         setMode(config_.mode.value(), nullptr);
         checkServerForMode(config_.mode.value());
         instance_.inputContextManager().registerProperty("LotusState", &factory_);
-        surroundingTextWatcher_ = instance_.watchEvent<EventType::InputContextSurroundingTextUpdated>(
-            EventWatcherPhase::PreInputMethod, [this](SurroundingTextUpdatedEvent& event) {
+        surroundingTextWatcher_ =
+            instance_.watchEvent<EventType::InputContextSurroundingTextUpdated>(EventWatcherPhase::PreInputMethod, [this](SurroundingTextUpdatedEvent& event) {
                 auto* ic = event.inputContext();
                 if (ic != nullptr && ic->hasFocus()) {
                     if (auto* state = ic->propertyFor(&factory_)) {
@@ -321,9 +321,7 @@ namespace fcitx {
                 // UnixFD dups rawFd, so FdGuard keeps ownership of the original.
                 fcitx::UnixFD unixFd(fd.get());
                 mapped.emplace(unixFd);
-            } catch (const std::exception& e) {
-                LOTUS_WARN("Failed to map dictionary, falling back to read: " + std::string(e.what()));
-            }
+            } catch (const std::exception& e) { LOTUS_WARN("Failed to map dictionary, falling back to read: " + std::string(e.what())); }
             if (mapped) {
                 if (mapped->size() > 0) {
                     dictionary->loadFromText({reinterpret_cast<const char*>(mapped->data()), mapped->size()});
@@ -442,8 +440,7 @@ namespace fcitx {
     std::string LotusEngine::subMode(const InputMethodEntry& /*entry*/, InputContext& /*inputContext*/) {
         return InputMethodIdToString(*config_.inputMethod);
     }
-    inline void LogTextInputCapabilities(InputContext* ic)
-    {
+    inline void LogTextInputCapabilities(InputContext* ic) {
         assert(ic);
         const auto  flags          = ic->capabilityFlags();
         std::string capabilityList = describeCapabilityFlags(flags);
@@ -667,7 +664,8 @@ namespace fcitx {
     }
 
     void LotusEngine::keyEvent(const InputMethodEntry& /*entry*/, KeyEvent& keyEvent) {
-        LOTUS_INFO("key sym=" + std::to_string(static_cast<int>(keyEvent.key().sym())) + " states=" + std::to_string(static_cast<uint32_t>(keyEvent.key().states())) + " release=" + std::to_string(keyEvent.isRelease()));
+        LOTUS_INFO("key sym=" + std::to_string(static_cast<int>(keyEvent.key().sym())) + " states=" + std::to_string(static_cast<uint32_t>(keyEvent.key().states())) +
+                   " release=" + std::to_string(keyEvent.isRelease()));
         auto* ic = keyEvent.inputContext();
         if (ic == nullptr) {
             return;
@@ -809,8 +807,8 @@ namespace fcitx {
             return;
         }
 
-        const bool surrvalid       = ic->surroundingText().isValid();
-        const bool isDbus          = getFrontendName(ic) == "dbus";
+        const bool surrvalid = ic->surroundingText().isValid();
+        const bool isDbus    = getFrontendName(ic) == "dbus";
         LOTUS_INFO("Surrounding text on focus out: " + describeSurroundingText(ic));
         state->lastDeactivateTime_ = nowMs();
         if (event.type() == EventType::InputContextFocusOut) {
