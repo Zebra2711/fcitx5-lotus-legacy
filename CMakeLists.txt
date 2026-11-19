@@ -66,9 +66,15 @@ else()
     message(STATUS "Fcitx5 version ${Fcitx5Utils_VERSION} detected: Using legacy API")
 endif()
 
-if (Fcitx5Utils_VERSION VERSION_GREATER_EQUAL "5.1.23")
+include(CheckIncludeFileCXX)
+
+check_include_file_cxx(
+    "fcitx-utils/mappedbuffer.h"
+    FCITX5_HAS_MAPPED_BUFFER
+)
+
+if (FCITX5_HAS_MAPPED_BUFFER)
     add_definitions(-DLOTUS_USE_MAPPED_BUFFER)
-    message(STATUS "Fcitx5 version ${Fcitx5Utils_VERSION} detected: Using MappedBuffer")
 endif()
 fcitx5_add_i18n_definition()
 
