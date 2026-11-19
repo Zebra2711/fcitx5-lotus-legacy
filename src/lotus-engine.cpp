@@ -424,61 +424,16 @@ namespace fcitx {
     inline void LogTextInputCapabilities(InputContext* ic)
     {
         assert(ic);
-        const auto flags = ic->capabilityFlags();
-        struct Entry {
-            CapabilityFlag flag;
-            const char* name;
-        };
-        static constexpr Entry entries[] = {
-            {CapabilityFlag::Digit, "Digit"},
-            {CapabilityFlag::Password, "Password"},
-            {CapabilityFlag::WordCompletion, "WordCompletion"},
-            {CapabilityFlag::SpellCheck, "SpellCheck"},
-            {CapabilityFlag::UppercaseWords, "UppercaseWords"},
-            {CapabilityFlag::Lowercase, "Lowercase"},
-            {CapabilityFlag::Uppercase, "Uppercase"},
-            {CapabilityFlag::Sensitive, "Sensitive"},
-            {CapabilityFlag::Alpha, "Alpha"},
-            {CapabilityFlag::Multiline, "Multiline"},
-            {CapabilityFlag::Number, "Number"},
-            {CapabilityFlag::Dialable, "Dialable"},
-            {CapabilityFlag::Url, "Url"},
-            {CapabilityFlag::Email, "Email"},
-            {CapabilityFlag::Name, "Name"},
-            {CapabilityFlag::Date, "Date"},
-            {CapabilityFlag::Time, "Time"},
-            {CapabilityFlag::Terminal, "Terminal"},
-            {CapabilityFlag::SurroundingText, "SurroundingText"},
-            {CapabilityFlag::Disable, "Disable"},
-            {CapabilityFlag::ClientUnfocusCommit, "ClientUnfocusCommit"},
-            {CapabilityFlag::KeyEventOrderFix, "KeyEventOrderFix"},
-            {CapabilityFlag::Preedit, "Preedit"},
-            {CapabilityFlag::FormattedPreedit, "FormattedPreedit"},
-            {CapabilityFlag::CommitStringWithCursor, "CommitStringWithCursor"},
-            {CapabilityFlag::ClientSideUI, "ClientSideUI"},
-            {CapabilityFlag::ClientSideInputPanel, "ClientSideInputPanel"},
-            {CapabilityFlag::RelativeRect, "RelativeRect"},
-            {CapabilityFlag::NoOnScreenKeyboard, "NoOnScreenKeyboard"},
-            {CapabilityFlag::ReportKeyRepeat, "ReportKeyRepeat"},
-            {CapabilityFlag::GetIMInfoOnFocus, "GetIMInfoOnFocus"},
-            {CapabilityFlag::PasswordOrSensitive, "PasswordOrSensitive"},
-            {CapabilityFlag::NoFlag, "NoFlag"},
-            {CapabilityFlag::ClientSideControlState, "ClientSideControlState"},
-        };
-        std::string capabilityList;
-        for (const auto& entry : entries) {
-            if (!flags.test(entry.flag))
-                continue;
-            if (!capabilityList.empty())
-                capabilityList += ", ";
-            capabilityList += entry.name;
-        }
+        const auto  flags          = ic->capabilityFlags();
+        std::string capabilityList = describeCapabilityFlags(flags);
         if (flags.test(CapabilityFlag::Digit) && flags.test(CapabilityFlag::Password)) {
-            if (!capabilityList.empty())
+            if (capabilityList != "none")
                 capabilityList += ", ";
+            else
+                capabilityList.clear();
             capabilityList += "PIN";
         }
-        LOTUS_INFO("CapabilityFlags: " + (capabilityList.empty() ? std::string("none") : capabilityList));
+        LOTUS_INFO("CapabilityFlags: " + capabilityList);
     }
     void LotusEngine::activate(const InputMethodEntry& /*entry*/, InputContextEvent& event) {
         auto*      ic        = event.inputContext();

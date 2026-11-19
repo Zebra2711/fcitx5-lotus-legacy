@@ -16,11 +16,16 @@
 
 #include <atomic>
 #include <cstdint>
+#include <fcitx-utils/capabilityflags.h>
+#include <fcitx-utils/flags.h>
+#include <fcitx-utils/inputbuffer.h>
 #include <fcitx-utils/textformatflags.h>
+#include <initializer_list>
 #include <string>
 #include <string_view>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <utility>
 
 #include "common-export.h"
 #include "lotus-mode.h"
@@ -191,11 +196,46 @@ std::string getFrontendName(fcitx::InputContext* ic);
 std::string describeSurroundingText(const fcitx::InputContext* ic);
 
 /**
+ * @brief Render a set of fcitx flags as comma separated names for diagnostics.
+ * @param flags Flags to render.
+ * @param entries Flag/name pairs; the enum's zero value must not be listed because Flags::test(0) is always true.
+ * @return Comma separated flag names, or "none" when no flag is set.
+ */
+template <typename Enum>
+std::string describeFlags(fcitx::Flags<Enum> flags, std::initializer_list<std::pair<Enum, const char*>> entries) {
+    std::string out;
+    for (const auto& [flag, name] : entries) {
+        if (!flags.test(flag)) {
+            continue;
+        }
+        if (!out.empty()) {
+            out += ", ";
+        }
+        out += name;
+    }
+    return out.empty() ? "none" : out;
+}
+
+/**
+ * @brief Render input context capability flags for diagnostics.
+ * @param flags Capability flags.
+ * @return Comma separated flag names, or "none" when no flag is set.
+ */
+std::string describeCapabilityFlags(fcitx::CapabilityFlags flags);
+
+/**
  * @brief Render text format flags for diagnostics.
  * @param flags Text format flags.
  * @return Comma separated flag names, or "none" when no flag is set.
  */
 std::string describeTextFormatFlags(fcitx::TextFormatFlags flags);
+
+/**
+ * @brief Render input buffer options for diagnostics.
+ * @param options Input buffer options.
+ * @return Comma separated option names, or "none" when no option is set.
+ */
+std::string describeInputBufferOptions(fcitx::InputBufferOptions options);
 
 /**
  * @brief Key event entry for replay buffer.
