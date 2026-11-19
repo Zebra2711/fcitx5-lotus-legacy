@@ -126,6 +126,11 @@ class TestInputContext final : public fcitx::InputContext {
     }
 
     // Verification helpers: inspect recorded engine actions
+    void resetRecordedActions() {
+        commits_.clear();
+        deletes_.clear();
+        forwarded_.clear();
+    }
     void resetPreeditUpdateCount() {
         preeditUpdates_ = 0;
     }

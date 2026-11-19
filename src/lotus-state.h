@@ -136,6 +136,7 @@ namespace fcitx {
         InputContext&                         ic_;     // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
         std::shared_ptr<lotus::KeyProcessor>  lotusEngine_;
         std::u32string                        oldPreBuffer_;
+        std::u32string                        lastSurroundingText_; ///< Previous client text, used to spot a client-side preedit commit
         bool                                  hasHistory_            = false;
         size_t                                expectedBackspaces_    = 0;
         size_t                                currentBackspaceCount_ = 0;
@@ -271,6 +272,16 @@ namespace fcitx {
          * @brief Drops the click watchdog, e.g. because the client reset the context itself.
          */
         void cancelMouseClickWatchdog();
+
+        /**
+         * @brief Stores the current surrounding text without inspecting the composition.
+         */
+        void rememberSurroundingText();
+
+        /**
+         * @brief Drops a stale preedit when a click made the client commit it itself.
+         */
+        void syncSurroundingText();
 
         /**
          * @brief Abandons a deferred Select burst when another context took the focus away for good.

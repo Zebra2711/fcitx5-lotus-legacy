@@ -139,6 +139,7 @@ add_lotus_headless_test(TARGET uinput_auto_restore SOURCES uinput-auto-restore.c
 add_lotus_headless_test(TARGET anchor_key_protocol SOURCES anchor-key-protocol.cpp LABELS "integration;smooth")
 add_lotus_headless_test(TARGET uinput_server_probe SOURCES uinput-server-probe.cpp LABELS "unit;server")
 add_lotus_headless_test(TARGET preedit_backspace SOURCES preedit-backspace.cpp LABELS "integration;preedit")
+add_lotus_headless_test(TARGET preedit_click_commit SOURCES preedit-click-commit.cpp LABELS "integration;preedit")
 add_lotus_headless_test(TARGET select_mode_replacement SOURCES select-mode-replacement.cpp LABELS "integration;select")
 add_lotus_headless_test(TARGET select_modifier_replay SOURCES select-modifier-replay.cpp LABELS "integration;select")
 add_lotus_headless_test(TARGET chromium_address_bar SOURCES chromium-address-bar.cpp LABELS "integration;select")

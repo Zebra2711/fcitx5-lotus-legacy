@@ -279,7 +279,8 @@ namespace fcitx {
         bool                                   isGnome_ = false;
         mutable std::mutex                     appRulesMutex_;
         std::unordered_map<KeySym, LotusMode>  modeMenuMapping_;
-        std::unique_ptr<EventSourceIO>         mouseEventSource_;
+        std::unique_ptr<EventSourceIO>                   mouseEventSource_;
+        std::unique_ptr<HandlerTableEntry<EventHandler>> surroundingTextWatcher_;
 
         /**
          * @brief (Re)loads the custom dictionary from disk into the Go engine handle.

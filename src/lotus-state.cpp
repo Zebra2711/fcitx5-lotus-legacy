@@ -40,6 +40,19 @@ namespace fcitx {
     constexpr int     kMinDelayMs = 1;
     constexpr int     kMaxDelayMs = 1000;
 
+    namespace {
+        size_t countOccurrences(std::u32string_view text, std::u32string_view needle) {
+            if (needle.empty()) {
+                return 0;
+            }
+            size_t count = 0;
+            for (size_t pos = text.find(needle); pos != std::u32string_view::npos; pos = text.find(needle, pos + needle.size())) {
+                ++count;
+            }
+            return count;
+        }
+    } // namespace
+
     int               clampDelay(int value) {
         return std::clamp(value, kMinDelayMs, kMaxDelayMs);
     }
@@ -198,6 +211,38 @@ namespace fcitx {
 
     void LotusState::cancelMouseClickWatchdog() {
         mouseClickWatchdog_.reset();
+    }
+
+    void LotusState::rememberSurroundingText() {
+        const auto& surrounding = ic_.surroundingText();
+        if (surrounding.isValid()) {
+            lastSurroundingText_ = lotus::utf8::decode(surrounding.text());
+        }
+    }
+
+    void LotusState::syncSurroundingText() {
+        const auto& surrounding = ic_.surroundingText();
+        if (!surrounding.isValid()) {
+            return;
+        }
+        const std::u32string text = lotus::utf8::decode(surrounding.text());
+        const std::u32string previous = lastSurroundingText_;
+        lastSurroundingText_ = text;
+
+        if (currentMode() != LotusMode::Preedit) {
+            return;
+        }
+        const std::u32string preedit = pullPreeditString();
+        if (preedit.empty()) {
+            return;
+        }
+        // A click can make the client commit the client-side preedit itself and
+        // report it back inside the surrounding text. Forget our stale copy so
+        // the next click cannot commit it a second time.
+        if (countOccurrences(text, preedit) > countOccurrences(previous, preedit)) {
+            LOTUS_INFO("Client committed the preedit, dropping the stale copy");
+            reset();
+        }
     }
 
     void LotusState::abortDeferredSelectIfPending() {
