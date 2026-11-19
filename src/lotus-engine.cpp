@@ -57,6 +57,9 @@ namespace fcitx {
     constexpr const char* CharsetActionPrefix = "lotus-charset-";
     constexpr const char* CustomKeymapFile    = "conf/lotus-custom-keymap.conf";
     constexpr const char* MacroTableFile      = "conf/lotus-macro-table.conf";
+    // A focus loss is a bounce only while a key is still being handled: a real
+    // focus move (e.g. clicking another field) happens once typing has settled.
+    constexpr int64_t FocusBounceWindowMs = 100;
 
     EmojiLoader&          LotusEngine::emojiLoader() {
         if (!emojiLoader_) {
@@ -462,7 +465,8 @@ namespace fcitx {
         state->reconcileAbortedUinputReplacement();
 
         const bool uinputMode         = isUinputMode(targetMode);
-        const bool focusBounce        = uinputMode && state->lastDeactivateTime_ > 0 && nowMs() - state->lastDeactivateTime_ < 100;
+        const bool recentKey          = state->lastKeyTime_ > 0 && nowMs() - state->lastKeyTime_ < FocusBounceWindowMs;
+        const bool focusBounce        = uinputMode && recentKey && state->lastDeactivateTime_ > 0 && nowMs() - state->lastDeactivateTime_ < FocusBounceWindowMs;
         const bool resumeReplacement  = focusBounce && state->deletionInterruptedAt_ > 0 && g_isDeleting.load(std::memory_order_acquire);
         state->deletionInterruptedAt_ = 0;
 
@@ -486,7 +490,7 @@ namespace fcitx {
         state->rememberSurroundingText();
         if (event.type() == EventType::InputContextFocusIn && isDbus && !surrvalid) {
             LOTUS_INFO("Skip clearAllBuffers");
-        } else if (surrvalid && !state->oldPreBuffer_.empty() && (nowMs() - state->lastDeactivateTime_) >= 100) {
+        } else if (surrvalid && !state->oldPreBuffer_.empty() && (nowMs() - state->lastDeactivateTime_) >= FocusBounceWindowMs) {
             state->clearAllBuffers();
         }
         if (!resumeReplacement) {

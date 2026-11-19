@@ -162,6 +162,7 @@ namespace fcitx {
         bool                                  shouldCapitalize_      = false;
         bool                                  isPrevPunctuation_     = false;
         int64_t                               lastDeactivateTime_    = 0;
+        int64_t                               lastKeyTime_           = 0;     ///< last key press, used to tell a focus bounce from a real focus move
         int64_t                               deletionInterruptedAt_ = 0;     ///< when deactivate() cut an in-flight replacement (0 = none)
         bool                                  deferredFocusOut_      = false; ///< uinput focus-out reset waiting for activate()
         bool                                  trackingModifierTap_   = false; ///< Selected modifier held, waiting for consecutive keyup
