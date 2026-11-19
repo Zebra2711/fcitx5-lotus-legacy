@@ -64,6 +64,7 @@ namespace fcitx {
 
     LotusState::LotusState(LotusEngine* engine, InputContext* ic) : engine_(*engine), ic_(*ic) {
         setEngine();
+        LOTUS_INFO("Emoji input buffer options: " + describeInputBufferOptions(emojiBuffer_.options()));
     }
 
     void LotusState::setEngine() {
@@ -500,7 +501,7 @@ namespace fcitx {
                 if (isCtrlBackspace) {
                     emojiBuffer_.clear();
                 } else {
-                    emojiBuffer_.pop_back();
+                    emojiBuffer_.backspace();
                 }
                 keyEvent.filterAndAccept();
             } else {
@@ -518,7 +519,7 @@ namespace fcitx {
                     commonList->candidateFromAll(globalIdx).select(&ic_);
                     keyEvent.filterAndAccept();
                 } else if (currentSym == FcitxKey_Return && !emojiBuffer_.empty()) {
-                    lotus::fcitx_text::commit(&ic_, emojiBuffer_, lastCommitTime_);
+                    lotus::fcitx_text::commit(&ic_, lotus::utf8::decode(emojiBuffer_.userInput()), lastCommitTime_);
                     emojiBuffer_.clear();
                     updateEmojiPreedit();
                     keyEvent.filterAndAccept();
@@ -543,7 +544,7 @@ namespace fcitx {
         {
             const uint32_t codePoint = Key::keySymToUnicode(currentSym);
             if (codePoint != 0U) {
-                emojiBuffer_.push_back(static_cast<char32_t>(codePoint));
+                emojiBuffer_.type(codePoint);
                 keyEvent.filterAndAccept();
                 updateEmojiPreedit();
             } else {
@@ -561,12 +562,12 @@ namespace fcitx {
                 return;
             }
         } else {
-            emojiCandidates_ = engine_.emojiLoader().search(lotus::utf8::encode(emojiBuffer_));
+            emojiCandidates_ = engine_.emojiLoader().search(emojiBuffer_.userInput());
         }
 
         if (!emojiBuffer_.empty()) {
             Text preeditText;
-            preeditText.append(lotus::utf8::encode(emojiBuffer_), TextFormatFlag::Underline);
+            preeditText.append(emojiBuffer_.userInput(), TextFormatFlag::Underline);
             preeditText.setCursor(static_cast<int>(preeditText.textLength()));
             LOTUS_INFO("Emoji preedit TextFormatFlags: " + describeTextFormatFlags(preeditText.formatAt(0)));
             ic_.inputPanel().setPreedit(preeditText);

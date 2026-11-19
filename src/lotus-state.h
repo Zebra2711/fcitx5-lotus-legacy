@@ -26,6 +26,7 @@
 #include <cstdint>
 #include <functional>
 #include <fcitx-utils/event.h>
+#include <fcitx-utils/inputbuffer.h>
 #include <fcitx/inputcontext.h>
 #include <memory>
 
@@ -154,7 +155,7 @@ namespace fcitx {
         bool                                  deferredCommitPending_ = false; ///< Timer armed and not fired yet
         bool                                  deferCommits_          = false; ///< Route the batch through the deferred timer
         LotusAppRuleSetting                   appRuleSetting_;                ///< Per-app rule (mode + delay overrides) pushed by the engine
-        std::u32string                        emojiBuffer_;
+        fcitx::InputBuffer                    emojiBuffer_{fcitx::InputBufferOption::FixedCursor}; ///< Emoji query buffer; cursor stays at the end
         std::vector<EmojiEntry>               emojiCandidates_;
         KeyBuffer                             bufferedKeys_; ///< Keystrokes buffered during replacement
         bool                                  isPrevSpace_           = false;
