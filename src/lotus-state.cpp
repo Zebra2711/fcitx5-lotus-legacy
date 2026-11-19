@@ -53,7 +53,7 @@ namespace fcitx {
         }
     } // namespace
 
-    int               clampDelay(int value) {
+    int clampDelay(int value) {
         return std::clamp(value, kMinDelayMs, kMaxDelayMs);
     }
 
@@ -226,9 +226,9 @@ namespace fcitx {
         if (!surrounding.isValid()) {
             return;
         }
-        const std::u32string text = lotus::utf8::decode(surrounding.text());
+        const std::u32string text     = lotus::utf8::decode(surrounding.text());
         const std::u32string previous = lastSurroundingText_;
-        lastSurroundingText_ = text;
+        lastSurroundingText_          = text;
         LOTUS_INFO("Surrounding text updated: " + describeSurroundingText(&ic_));
 
         if (currentMode() != LotusMode::Preedit) {
@@ -380,10 +380,11 @@ namespace fcitx {
         ic_.inputPanel().reset();
         const std::u32string preeditText = pullPreeditString();
         if (!preeditText.empty()) {
-            Text text = lotus::fcitx_text::toText(preeditText);
+            Text       text             = lotus::fcitx_text::toText(preeditText);
             const bool clientPreedit    = ic_.capabilityFlags().test(CapabilityFlag::Preedit);
             const bool formattedPreedit = ic_.capabilityFlags().test(CapabilityFlag::FormattedPreedit);
-            LOTUS_INFO("Preedit TextFormatFlags: " + describeTextFormatFlags(text.formatAt(0)) + " (path=" + (clientPreedit ? "client" : "input-panel") + ", FormattedPreedit=" + (formattedPreedit ? "yes" : "no") + ")");
+            LOTUS_INFO("Preedit TextFormatFlags: " + describeTextFormatFlags(text.formatAt(0)) + " (path=" + (clientPreedit ? "client" : "input-panel") +
+                       ", FormattedPreedit=" + (formattedPreedit ? "yes" : "no") + ")");
             if (clientPreedit)
                 ic_.inputPanel().setClientPreedit(text);
             else
@@ -695,12 +696,12 @@ namespace fcitx {
             return;
         }
 
-        const bool   autofill     = isAutofillCertain(ic_.surroundingText());
-        const bool   addressBar   = isChromium_ && (ic_.capabilityFlags().test(CapabilityFlag::Url) || engine_.isLikeAddressBarChromium());
-        const bool   uinputSelect = (currentMode() == LotusMode::Select && !autofill) || (isUinputMode(currentMode()) && addressBar);
+        const bool autofill     = isAutofillCertain(ic_.surroundingText());
+        const bool addressBar   = isChromium_ && (ic_.capabilityFlags().test(CapabilityFlag::Url) || engine_.isLikeAddressBarChromium());
+        const bool uinputSelect = (currentMode() == LotusMode::Select && !autofill) || (isUinputMode(currentMode()) && addressBar);
 
-        const int    commitMs = clampDelay(appRuleSetting_.commitInterval > 0 ? appRuleSetting_.commitInterval : *engine_.config().defaultCommitInterval);
-        const auto   interval =
+        const int  commitMs = clampDelay(appRuleSetting_.commitInterval > 0 ? appRuleSetting_.commitInterval : *engine_.config().defaultCommitInterval);
+        const auto interval =
             static_cast<uint32_t>(clampDelay(appRuleSetting_.backspaceInterval > 0 ? appRuleSetting_.backspaceInterval : *engine_.config().defaultBackspaceInterval));
         const auto postDelay = static_cast<uint32_t>(clampDelay(appRuleSetting_.postDelay > 0 ? appRuleSetting_.postDelay : *engine_.config().defaultPostDelay));
 
@@ -739,7 +740,9 @@ namespace fcitx {
             if (!echoDriven) {
                 auto& wlr     = LotusWlrVirtualKeyboard::instance();
                 auto  emitNow = [&wlr, burstCount, addedUtf8, uinputSelect] { return uinputSelect ? wlr.emitSelect(burstCount, addedUtf8) : wlr.emit(burstCount, addedUtf8); };
-                LOTUS_INFO("dbg: del=" + std::to_string(delSize) + " burst=" + std::to_string(burstCount) + " autofill=" + std::to_string(autofill) + " select=" + std::to_string(uinputSelect) + " preDelay=" + std::to_string(preDelay) + " add=[" + addedUtf8 + "] mode=" + std::to_string(static_cast<int>(currentMode())));
+                LOTUS_INFO("dbg: del=" + std::to_string(delSize) + " burst=" + std::to_string(burstCount) + " autofill=" + std::to_string(autofill) +
+                           " select=" + std::to_string(uinputSelect) + " preDelay=" + std::to_string(preDelay) + " add=[" + addedUtf8 +
+                           "] mode=" + std::to_string(static_cast<int>(currentMode())));
                 const std::string wlrLog =
                     "wlr-virtual-keyboard: sent " + std::to_string(burstCount) + (uinputSelect ? " Shift+Left" : " backspaces") + " + keys for [" + addedUtf8 + "]";
                 if (preDelay > 0) {

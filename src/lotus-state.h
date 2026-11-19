@@ -151,18 +151,18 @@ namespace fcitx {
         InjectionBackend                      injectionBackend_      = InjectionBackend::None; ///< backend delivering the in-flight burst
         bool                                  lastSelect_            = false;                  ///< kind of the most recent burst, for replay
         std::u32string                        pendingCommitString_;
-        std::u32string                        commitBatch_;                   ///< Text of the replacement batch, sent as one commitString
-        std::unique_ptr<EventSourceTime>      deferredCommitTimer_;           ///< Pending dbus commit timer
-        std::unique_ptr<EventSourceTime>      mouseClickWatchdog_;            ///< Commits the preedit a click left behind
-        bool                                  selectAbortDeferred_ = false;   ///< Select burst kept alive across a focus bounce
-        uint32_t                              burstIntervalMs_     = 0;       ///< Pacing of the in-flight uinput burst, used to re-arm its deadline
-        std::u32string                        deferredCommitText_;            ///< Text waiting for the deferred commit
-        bool                                  deferredCommitPending_ = false; ///< Timer armed and not fired yet
-        bool                                  deferCommits_          = false; ///< Route the batch through the deferred timer
-        LotusAppRuleSetting                   appRuleSetting_;                ///< Per-app rule (mode + delay overrides) pushed by the engine
+        std::u32string                        commitBatch_;                                        ///< Text of the replacement batch, sent as one commitString
+        std::unique_ptr<EventSourceTime>      deferredCommitTimer_;                                ///< Pending dbus commit timer
+        std::unique_ptr<EventSourceTime>      mouseClickWatchdog_;                                 ///< Commits the preedit a click left behind
+        bool                                  selectAbortDeferred_ = false;                        ///< Select burst kept alive across a focus bounce
+        uint32_t                              burstIntervalMs_     = 0;                            ///< Pacing of the in-flight uinput burst, used to re-arm its deadline
+        std::u32string                        deferredCommitText_;                                 ///< Text waiting for the deferred commit
+        bool                                  deferredCommitPending_ = false;                      ///< Timer armed and not fired yet
+        bool                                  deferCommits_          = false;                      ///< Route the batch through the deferred timer
+        LotusAppRuleSetting                   appRuleSetting_;                                     ///< Per-app rule (mode + delay overrides) pushed by the engine
         fcitx::InputBuffer                    emojiBuffer_{fcitx::InputBufferOption::FixedCursor}; ///< Emoji query buffer; cursor stays at the end
         std::vector<EmojiEntry>               emojiCandidates_;
-        std::string                           keyLog_; ///< Raw keys typed since the app changed, for diagnostics
+        std::string                           keyLog_;       ///< Raw keys typed since the app changed, for diagnostics
         KeyBuffer                             bufferedKeys_; ///< Keystrokes buffered during replacement
         bool                                  isPrevSpace_           = false;
         bool                                  isPrevHyphen_          = false;

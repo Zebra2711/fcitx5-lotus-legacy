@@ -271,14 +271,14 @@ namespace fcitx {
         std::unique_ptr<EventSourceTime>                     cycleModeNotificationTimer_;
         static constexpr uint64_t                            kCycleModeNotificationTimeoutUsec = 800000; // 800ms in microseconds
         FCITX_ADDON_DEPENDENCY_LOADER(emoji, instance_.addonManager());
-        std::unique_ptr<EmojiLoader>           emojiLoader_;
-        std::unique_ptr<WindowFocusTracker>    windowFocusTracker_;
-        EventDispatcher                        appRuleDispatcher_;
-        TrackableObjectReference<InputContext> activeContext_;
-        std::string                            activeProgram_;
-        bool                                   isGnome_ = false;
-        mutable std::mutex                     appRulesMutex_;
-        std::unordered_map<KeySym, LotusMode>  modeMenuMapping_;
+        std::unique_ptr<EmojiLoader>                     emojiLoader_;
+        std::unique_ptr<WindowFocusTracker>              windowFocusTracker_;
+        EventDispatcher                                  appRuleDispatcher_;
+        TrackableObjectReference<InputContext>           activeContext_;
+        std::string                                      activeProgram_;
+        bool                                             isGnome_ = false;
+        mutable std::mutex                               appRulesMutex_;
+        std::unordered_map<KeySym, LotusMode>            modeMenuMapping_;
         std::unique_ptr<EventSourceIO>                   mouseEventSource_;
         std::unique_ptr<HandlerTableEntry<EventHandler>> surroundingTextWatcher_;
 
