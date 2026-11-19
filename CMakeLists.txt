@@ -66,6 +66,11 @@ if (Fcitx5Utils_VERSION VERSION_GREATER_EQUAL "5.1.13")
 else()
     message(STATUS "Fcitx5 version ${Fcitx5Utils_VERSION} detected: Using legacy API")
 endif()
+
+if (Fcitx5Utils_VERSION VERSION_GREATER_EQUAL "5.1.23")
+    add_definitions(-DLOTUS_USE_MAPPED_BUFFER)
+    message(STATUS "Fcitx5 version ${Fcitx5Utils_VERSION} detected: Using MappedBuffer")
+endif()
 fcitx5_add_i18n_definition()
 
 # Absolute paths that every packaging has to override.
