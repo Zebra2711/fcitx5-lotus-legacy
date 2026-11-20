@@ -17,7 +17,7 @@
 #include "rule.h"
 
 #include <string>
-#include <unordered_map>
+#include <string_view>
 
 namespace lotus {
 
@@ -32,7 +32,7 @@ namespace lotus {
      * @param definition Key/value pairs of the definition (input key -> DSL line).
      * @return Parsed input method; an empty rule set when the definition has no usable line.
      */
-    InputMethod parseInputMethod(const std::unordered_map<std::string, std::string>& definition);
+    InputMethod parseInputMethod(data::FlatMapView<std::string_view, std::string_view> definition);
 
     /**
      * @brief Input method parsed once and shared by every caller, indexed by the enum.
