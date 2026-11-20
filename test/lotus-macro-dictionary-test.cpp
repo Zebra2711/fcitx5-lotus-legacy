@@ -12,7 +12,9 @@
 #include "test-utils.h"
 #include "utf8.h"
 
+#include <cstddef>
 #include <cstdio>
+#include <initializer_list>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -33,6 +35,22 @@ namespace {
             reportFailure(name, lotus::utf8::encode(expected), lotus::utf8::encode(actual), "macro table lookups must return the value the Go tests expect");
             ++failures;
         }
+    }
+
+    // Compares against a view list instead of a braced std::vector argument: building the
+    // temporary vector at each call site made GCC 15 warn with -Wfree-nonheap-object.
+    void checkWords(const char* name, const std::vector<std::u32string>& actual, std::initializer_list<std::u32string_view> expected) {
+        bool equal = actual.size() == expected.size();
+        if (equal) {
+            std::size_t index = 0;
+            for (const std::u32string_view word : expected) {
+                if (std::u32string_view(actual[index++]) != word) {
+                    equal = false;
+                    break;
+                }
+            }
+        }
+        check(name, equal);
     }
 
     // TestMacroTableEmpty.
@@ -71,8 +89,9 @@ namespace {
 
     // TestDictionaryLookup.
     void case_dictionary_lookup() {
-        lotus::Dictionary dictionary;
-        dictionary.loadFromWords({"đcu", "chào", ""});
+        lotus::Dictionary               dictionary;
+        const std::vector<std::string> words{"đcu", "chào", ""};
+        dictionary.loadFromWords(words);
 
         check("hasWord missed a dictionary word: [chào đcu]", dictionary.hasWord(U"đcu") && dictionary.hasWord(U"chào"));
         check("hasWord([đc]) got [true] expected [false] (prefix is not a word)", !dictionary.hasWord(U"đc"));
@@ -88,7 +107,7 @@ namespace {
 
         // Go prints d.words when it reports a miss: the empty word is dropped and the rest is sorted
         // by code point ("chào" before "đcu", the same order as the byte-wise sort of Go).
-        check("dictionary words got [chào đcu] expected [chào đcu]", dictionary.words() == std::vector<std::u32string>{U"chào", U"đcu"});
+        checkWords("dictionary words got [chào đcu] expected [chào đcu]", dictionary.words(), {U"chào", U"đcu"});
 
         const lotus::Dictionary nilDictionary;
         check("nil dictionary must not report a hit", !nilDictionary.hasWord(U"đcu") && !nilDictionary.hasWordOrPrefix(U"đ"));
@@ -102,7 +121,7 @@ namespace {
 
         check("loadFromText([Đường]) got [missing] expected [found]", dictionary.hasWord(U"đường"));
         check("loadFromText([Đường]) got [missing] expected [found] as a prefix", dictionary.hasWordOrPrefix(U"đườ"));
-        check("loadFromText([Đường]) stores [đường]", dictionary.words() == std::vector<std::u32string>{U"đường"});
+        checkWords("loadFromText([Đường]) stores [đường]", dictionary.words(), {U"đường"});
         check("the uppercase spelling is not stored", !dictionary.hasWord(U"Đường"));
     }
 
@@ -112,7 +131,7 @@ namespace {
         lotus::Dictionary dictionary;
         dictionary.loadFromText("\n\nĐường\n\nCHÀO\n\n\n");
 
-        check("empty lines are dropped", dictionary.words() == std::vector<std::u32string>{U"chào", U"đường"});
+        checkWords("empty lines are dropped", dictionary.words(), {U"chào", U"đường"});
         check("hasWord(chào) after skipping empty lines", dictionary.hasWord(U"chào"));
         check("hasWord(đường) after skipping empty lines", dictionary.hasWord(U"đường"));
 
