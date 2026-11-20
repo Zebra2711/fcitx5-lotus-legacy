@@ -263,11 +263,11 @@ int main(int argc, char* argv[]) {
 
     FdGuard               addonFd;
     FdGuard               kbClientFd;
-    size_t                pendingBackspaces = 0;
+    uint8_t               pendingBackspaces = 0;
     bool                  pendingAnchor     = false; ///< anchor key still to be injected after the backspace burst
 
-    uint32_t              currentPostDelay = 0; ///< stores postDelay from KbMsg
-    uint32_t              currentInterval  = 5; ///< ms between injected keys within one request
+    uint16_t              currentPostDelay = 0; ///< stores postDelay from KbMsg
+    uint16_t              currentInterval  = 5; ///< ms between injected keys within one request
 
     struct sigaction      sa{};
     sa.sa_handler = signalHandler;
@@ -336,10 +336,10 @@ int main(int argc, char* argv[]) {
                 LotusLogger::instance().warn("Keyboard client disconnected or connection error");
                 kbClientFd.reset(-1);
                 fds[kKbClientIndex].fd = -1;
-            } else if (std::cmp_not_equal(n, sizeof(KbMsg)) && std::cmp_not_equal(n, sizeof(int32_t))) {
+            } else if (std::cmp_not_equal(n, sizeof(KbMsg))) {
                 LotusLogger::instance().warn("Malformed keyboard message (" + std::to_string(n) + " bytes)");
             } else {
-                currentInterval = msg.interval > 0 ? std::min<uint32_t>(msg.interval, 1000) : 5;
+                currentInterval = msg.interval > 0 ? std::min<uint16_t>(msg.interval, 1000) : 5;
                 const KbOp op   = msg.op;
                 if (op == KbOp::Cancel) {
                     pendingBackspaces = 0;
@@ -349,8 +349,8 @@ int main(int argc, char* argv[]) {
                         std::this_thread::sleep_for(std::chrono::milliseconds(msg.preDelay));
                     }
                     currentPostDelay = msg.postDelay;
-                    pendingAnchor    = true;
-                    pendingBackspaces += msg.count - 1;
+                    pendingAnchor     = true;
+                    pendingBackspaces = static_cast<uint8_t>(std::min<unsigned>(pendingBackspaces + msg.count - 1U, 255U));
                     uinput.sendTap(KEY_BACKSPACE);
                 } else if (msg.count > 0) {
                     LotusLogger::instance().warn("Unknown keyboard message op: " + std::to_string(static_cast<int>(msg.op)));

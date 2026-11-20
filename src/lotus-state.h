@@ -144,8 +144,8 @@ namespace fcitx {
         std::u32string                        oldPreBuffer_;
         std::u32string                        lastSurroundingText_; ///< Previous client text, used to spot a client-side preedit commit
         bool                                  hasHistory_            = false;
-        size_t                                expectedBackspaces_    = 0;
-        size_t                                currentBackspaceCount_ = 0;
+        std::uint8_t                          expectedBackspaces_    = 0; ///< Backspaces in the in-flight burst
+        std::uint8_t                          currentBackspaceCount_ = 0; ///< Echoes seen so far for that burst
         bool                                  echoTriggerPending_    = false;                  ///< the injected burst commits on its last echo
         InjectionBackend                      injectionBackend_      = InjectionBackend::None; ///< backend delivering the in-flight burst
         std::u32string                        pendingCommitString_;
@@ -216,7 +216,7 @@ namespace fcitx {
          * @param interval Delay in milliseconds between consecutive injected keys.
          * @param postDelay Delay in milliseconds after completing the keyboard operation.
          */
-        void sendKbMsg(KbOp op, size_t count, uint32_t preDelay, uint32_t interval, uint32_t postDelay);
+        void sendKbMsg(KbOp op, std::uint8_t count, std::uint16_t preDelay, std::uint16_t interval, std::uint16_t postDelay);
 
         /**
          * @brief Sends backspace key events via uinput.
@@ -225,8 +225,9 @@ namespace fcitx {
          * @param interval Delay in milliseconds between consecutive injected keys.
          * @param postDelay Delay in milliseconds after completing the keyboard operation.
          */
-        void sendBackspaceUinput(size_t count, uint32_t preDelay, uint32_t interval, uint32_t postDelay);
+        void sendBackspaceUinput(std::uint8_t count, std::uint16_t preDelay, std::uint16_t interval, std::uint16_t postDelay);
 
+        /**
         /**
          * @brief Sends Cancel to drop the keys still pending from the in-flight replacement.
          */
@@ -267,7 +268,7 @@ namespace fcitx {
          * @param count Number of BackSpace events.
          * @return True when the backend accepted the burst.
          */
-        bool injectEchoBurst(size_t count);
+        bool injectEchoBurst(std::uint8_t count);
 
         /**
          * @brief Runs a task after the delay on the worker of the selected backend.
