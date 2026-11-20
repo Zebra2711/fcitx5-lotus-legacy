@@ -48,6 +48,12 @@ namespace fcitx {
         }
     }
 
+    void WlKeyboardDeleter::operator()(wl_keyboard* keyboard) const noexcept {
+        if (keyboard != nullptr) {
+            wl_keyboard_destroy(keyboard);
+        }
+    }
+
     void ZwpVirtualKeyboardManagerDeleter::operator()(zwp_virtual_keyboard_manager_v1* manager) const noexcept {
         if (manager != nullptr) {
             zwp_virtual_keyboard_manager_v1_destroy(manager);
@@ -115,6 +121,20 @@ namespace fcitx {
             }
             return buf.data();
         }
+
+        // These events belong to a wl_keyboard we only use to read the seat keymap.
+        void ignoreKeyboardEnter(void* /*data*/, wl_keyboard* /*keyboard*/, uint32_t /*serial*/, wl_surface* /*surface*/, wl_array* /*keys*/) {}
+
+        void ignoreKeyboardLeave(void* /*data*/, wl_keyboard* /*keyboard*/, uint32_t /*serial*/, wl_surface* /*surface*/) {}
+
+        void ignoreKeyboardKey(void* /*data*/, wl_keyboard* /*keyboard*/, uint32_t /*serial*/, uint32_t /*time*/, uint32_t /*key*/, uint32_t /*state*/) {}
+
+        void ignoreKeyboardModifiers(void* /*data*/, wl_keyboard* /*keyboard*/, uint32_t /*serial*/, uint32_t /*depressed*/, uint32_t /*latched*/, uint32_t /*locked*/,
+                                     uint32_t /*group*/) {}
+
+        void ignoreKeyboardRepeatInfo(void* /*data*/, wl_keyboard* /*keyboard*/, int32_t /*rate*/, int32_t /*delay*/) {}
+
+        constexpr std::string_view kCustomKeymapName = "lotus-wlr-virtual-keyboard";
     } // namespace
 
     LotusWlrVirtualKeyboard& LotusWlrVirtualKeyboard::instance() {
@@ -132,7 +152,10 @@ namespace fcitx {
         setShift(false);
         // Proxies first, then the display that owns the underlying connection.
         keyboard_.reset();
-        keymapSet_ = false;
+        keymapObserver_.reset();
+        keymapSet_          = false;
+        keymapIsCompositor_ = false;
+        compositorKeymap_.clear();
         manager_.reset();
         seat_.reset();
         registry_.reset();
@@ -170,6 +193,7 @@ namespace fcitx {
         if (!probe()) {
             return false;
         }
+        watchCompositorKeymap();
         keyboard_.reset(zwp_virtual_keyboard_manager_v1_create_virtual_keyboard(manager_.get(), seat_.get()));
         if (!keyboard_) {
             disconnect();
@@ -196,6 +220,35 @@ namespace fcitx {
             LOTUS_INFO("compositor has no zwp_virtual_keyboard_v1, using uinput");
         }
         return supported_;
+    }
+
+    bool LotusWlrVirtualKeyboard::uploadKeymapBytes(std::string_view keymap) {
+        FdGuard fd(createMemfd("lotus-wlr-virtual-keyboard-keymap"));
+        if (!fd.isValid()) {
+            LOTUS_ERROR("wlr-virtual-keyboard: memfd_create failed");
+            return false;
+        }
+        const auto size = static_cast<uint32_t>(keymap.size() + 1);
+        if (ftruncate(fd.get(), static_cast<off_t>(size)) != 0) {
+            return false;
+        }
+        size_t written = 0;
+        while (written < keymap.size()) {
+            const ssize_t w = write(fd.get(), keymap.data() + written, keymap.size() - written); // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+            if (w < 0) {
+                if (errno == EINTR) {
+                    continue;
+                }
+                return false;
+            }
+            written += static_cast<size_t>(w);
+        }
+        lseek(fd.get(), 0, SEEK_SET);
+        zwp_virtual_keyboard_v1_keymap(keyboard_.get(), WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1, fd.get(), size);
+        keymapSet_ = true;
+        // A keymap upload resets the client's xkb state, so mirror the user's Shift in the modifiers.
+        zwp_virtual_keyboard_v1_modifiers(keyboard_.get(), userShift_.load(std::memory_order_acquire) ? kShiftMod : 0, 0, 0, 0);
+        return wl_display_roundtrip(display_.get()) >= 0;
     }
 
     bool LotusWlrVirtualKeyboard::uploadKeymap(const uint32_t* cps, size_t n) {
@@ -256,32 +309,86 @@ namespace fcitx {
         keymap += "};\n";
         keymap += "};\n";
 
-        FdGuard fd(createMemfd("lotus-wlr-virtual-keyboard-keymap"));
-        if (!fd.isValid()) {
-            LOTUS_ERROR("wlr-virtual-keyboard: memfd_create failed");
+        if (!uploadKeymapBytes(keymap)) {
             return false;
         }
-        const auto size = static_cast<uint32_t>(keymap.size() + 1);
-        if (ftruncate(fd.get(), static_cast<off_t>(size)) != 0) {
+        keymapIsCompositor_ = false;
+        return true;
+    }
+
+    bool LotusWlrVirtualKeyboard::restoreCompositorKeymap() {
+        if (compositorKeymap_.empty()) {
             return false;
         }
-        ssize_t written = 0;
-        while (std::cmp_less(written, size)) {
-            const ssize_t w = write(fd.get(), keymap.c_str() + written, size - static_cast<uint32_t>(written)); // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            if (w < 0) {
+        if (keymapIsCompositor_ && keymapSet_) {
+            return true;
+        }
+        if (!uploadKeymapBytes(compositorKeymap_)) {
+            return false;
+        }
+        keymapIsCompositor_ = true;
+        return true;
+    }
+
+    void LotusWlrVirtualKeyboard::watchCompositorKeymap() {
+        if (keymapObserver_ || !seat_) {
+            return;
+        }
+        keymapObserver_.reset(wl_seat_get_keyboard(seat_.get()));
+        if (!keymapObserver_) {
+            return;
+        }
+        static const wl_keyboard_listener listener = {
+            .keymap      = &LotusWlrVirtualKeyboard::compositorKeymap,
+            .enter       = ignoreKeyboardEnter,
+            .leave       = ignoreKeyboardLeave,
+            .key         = ignoreKeyboardKey,
+            .modifiers   = ignoreKeyboardModifiers,
+            .repeat_info = ignoreKeyboardRepeatInfo,
+        };
+        wl_keyboard_add_listener(keymapObserver_.get(), &listener, this);
+        // The compositor sends the active keyboard's keymap as soon as the resource is created.
+        wl_display_roundtrip(display_.get());
+    }
+
+    void LotusWlrVirtualKeyboard::storeCompositorKeymap(uint32_t format, int fd, uint32_t size) {
+        // The fd belongs to this event; the client closes it.
+        FdGuard guard(fd);
+        if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1 || size == 0) {
+            return;
+        }
+        std::string data(size, '\0');
+        uint32_t    total = 0;
+        while (total < size) {
+            const ssize_t r = pread(guard.get(), data.data() + total, size - total, total); // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+            if (r < 0) {
                 if (errno == EINTR) {
                     continue;
                 }
-                return false;
+                return;
             }
-            written += w;
+            if (r == 0) {
+                break;
+            }
+            total += static_cast<uint32_t>(r);
         }
-        lseek(fd.get(), 0, SEEK_SET);
-        zwp_virtual_keyboard_v1_keymap(keyboard_.get(), WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1, fd.get(), size);
-        keymapSet_ = true;
-        // A keymap upload resets the client's xkb state, so mirror the user's Shift in the modifiers.
-        zwp_virtual_keyboard_v1_modifiers(keyboard_.get(), userShift_.load(std::memory_order_acquire) ? kShiftMod : 0, 0, 0, 0);
-        return wl_display_roundtrip(display_.get()) >= 0;
+        size_t len = total;
+        while (len > 0 && data[len - 1] == '\0') {
+            --len;
+        }
+        if (len == 0) {
+            return;
+        }
+        // Our own keymaps are echoed back whenever the virtual keyboard owns the
+        // seat; only remember keymaps that belong to the real keyboards.
+        if (std::string_view(data.data(), len).find(kCustomKeymapName) != std::string_view::npos) {
+            return;
+        }
+        compositorKeymap_.assign(data.data(), len);
+    }
+
+    void LotusWlrVirtualKeyboard::compositorKeymap(void* data, wl_keyboard* /*keyboard*/, uint32_t format, int32_t fd, uint32_t size) {
+        static_cast<LotusWlrVirtualKeyboard*>(data)->storeCompositorKeymap(format, fd, size);
     }
 
     void LotusWlrVirtualKeyboard::tap(uint32_t evdevKey, bool track) {
@@ -354,25 +461,42 @@ namespace fcitx {
                 wl_display_roundtrip(display_.get());
             }
         }
-        bool   first = true;
-        size_t pos   = 0;
-        while (ok && (first || pos < cps.size())) {
-            const size_t n = std::min(kTextKeys.size(), cps.size() - pos);
-            ok             = uploadKeymap(cps.data() + pos, n); // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            if (!ok) {
-                break;
+        const auto moveKeys = [&] {
+            for (int i = 0; i < count; ++i) {
+                tap(KEY_BACKSPACE, trackEcho);
             }
-            if (first) {
-                for (int i = 0; i < count; ++i) {
-                    tap(KEY_BACKSPACE, trackEcho);
+        };
+        size_t pos = 0;
+        if (cps.empty()) {
+            // Movement-only bursts stay on the compositor keymap so its xkb state is not recreated.
+            if (!restoreCompositorKeymap()) {
+                ok = uploadKeymap(nullptr, 0);
+            }
+            if (ok) {
+                moveKeys();
+                wl_display_roundtrip(display_.get());
+            }
+        } else {
+            bool first = true;
+            while (ok && (first || pos < cps.size())) {
+                const size_t n = std::min(kTextKeys.size(), cps.size() - pos);
+                ok             = uploadKeymap(cps.data() + pos, n); // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+                if (!ok) {
+                    break;
                 }
-                first = false;
+                if (first) {
+                    moveKeys();
+                    first = false;
+                }
+                for (size_t i = 0; i < n; ++i) {
+                    tap(kTextKeys[i], trackEcho); // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
+                }
+                wl_display_roundtrip(display_.get());
+                pos += n;
             }
-            for (size_t i = 0; i < n; ++i) {
-                tap(kTextKeys[i], trackEcho); // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
+            if (ok) {
+                restoreCompositorKeymap();
             }
-            wl_display_roundtrip(display_.get());
-            pos += n;
         }
         injecting_.store(false, std::memory_order_release);
         setShift(userShift_.load(std::memory_order_acquire));
