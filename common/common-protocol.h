@@ -9,7 +9,6 @@
 #ifndef _COMMON_PROTOCOL_H_
 #define _COMMON_PROTOCOL_H_
 
-#include <cstddef>
 #include <cstdint>
 
 /**
@@ -26,10 +25,10 @@ enum class KbOp : int8_t {
  */
 struct KbMsg {
     KbOp     op;        ///< requested operation
-    size_t   count;     ///< characters to delete/select (autofill included)
-    uint32_t preDelay;  ///< ms to wait BEFORE sending any key (commit_interval: cooldown between commits)
-    uint32_t interval;  ///< ms between consecutive injected keys (backspace_interval)
-    uint32_t postDelay; ///< ms to wait BEFORE sending the final trigger key (to let DOM expand selection)
+    uint8_t  count;     ///< characters to delete/select (autofill included)
+    uint16_t preDelay;  ///< ms to wait BEFORE sending any key (commit_interval: cooldown between commits)
+    uint16_t interval;  ///< ms between consecutive injected keys (backspace_interval)
+    uint16_t postDelay; ///< ms to wait BEFORE sending the final trigger key (to let DOM expand selection)
 };
 
 #endif // _COMMON_PROTOCOL_H_

@@ -28,6 +28,7 @@
 #include <fcitx/userinterface.h>
 
 #include <algorithm>
+#include <limits>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -53,6 +54,11 @@ namespace fcitx {
                 ++count;
             }
             return count;
+        }
+
+        /// @brief Saturates a burst size to the 8-bit counters used by LotusState.
+        std::uint8_t clampBackspaceCount(size_t count) {
+            return static_cast<std::uint8_t>(std::min(count, static_cast<size_t>(std::numeric_limits<std::uint8_t>::max())));
         }
     } // namespace
 
@@ -127,16 +133,16 @@ namespace fcitx {
         return engine_.kbSender().ensureConnected();
     }
 
-    void LotusState::sendKbMsg(KbOp op, size_t count, uint32_t preDelay, uint32_t interval, uint32_t postDelay) {
+    void LotusState::sendKbMsg(KbOp op, std::uint8_t count, std::uint16_t preDelay, std::uint16_t interval, std::uint16_t postDelay) {
         const KbMsg msg{.op = op, .count = count, .preDelay = preDelay, .interval = interval, .postDelay = postDelay};
         engine_.kbSender().send(msg);
     }
 
-    void LotusState::sendBackspaceUinput(size_t count, uint32_t preDelay, uint32_t interval, uint32_t postDelay) {
+    void LotusState::sendBackspaceUinput(std::uint8_t count, std::uint16_t preDelay, std::uint16_t interval, std::uint16_t postDelay) {
         sendKbMsg(KbOp::Backspace, count, preDelay, interval, postDelay);
     }
 
-    void LotusState::sendSelectUinput(size_t count, uint32_t preDelay, uint32_t interval, uint32_t postDelay) {
+    void LotusState::sendSelectUinput(std::uint8_t count, std::uint16_t preDelay, std::uint16_t interval, std::uint16_t postDelay) {
         sendKbMsg(KbOp::Select, count, preDelay, interval, postDelay);
     }
 
@@ -681,7 +687,9 @@ namespace fcitx {
             return false; // Allow intermediate backspaces/lefts to reach the app to clear autofill/old text / extend the selection.
         }
         // The anchor closes the burst even if echoes are lost.
-        currentBackspaceCount_ += 1;
+        if (currentBackspaceCount_ < std::numeric_limits<std::uint8_t>::max()) {
+            ++currentBackspaceCount_;
+        }
         finishReplacement(event);
         return true;
     }
@@ -706,30 +714,30 @@ namespace fcitx {
 
         const int  commitMs = clampDelay(appRuleSetting_.commitInterval > 0 ? appRuleSetting_.commitInterval : *engine_.config().defaultCommitInterval);
         const auto interval =
-            static_cast<uint32_t>(clampDelay(appRuleSetting_.backspaceInterval > 0 ? appRuleSetting_.backspaceInterval : *engine_.config().defaultBackspaceInterval));
-        const auto postDelay = static_cast<uint32_t>(clampDelay(appRuleSetting_.postDelay > 0 ? appRuleSetting_.postDelay : *engine_.config().defaultPostDelay));
+            static_cast<std::uint16_t>(clampDelay(appRuleSetting_.backspaceInterval > 0 ? appRuleSetting_.backspaceInterval : *engine_.config().defaultBackspaceInterval));
+        const auto    postDelay = static_cast<std::uint16_t>(clampDelay(appRuleSetting_.postDelay > 0 ? appRuleSetting_.postDelay : *engine_.config().defaultPostDelay));
 
-        const bool commitPending = deferredCommitPending_ || !deferredCommitText_.empty() || !commitBatch_.empty();
-        uint32_t   preDelay      = 0;
+        const bool    commitPending = deferredCommitPending_ || !deferredCommitText_.empty() || !commitBatch_.empty();
+        std::uint16_t preDelay      = 0;
         if (lastCommitTime_.time_since_epoch().count() > 0) {
             auto now       = std::chrono::steady_clock::now();
             auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastCommitTime_).count();
             if (elapsedMs < commitMs) {
-                preDelay = static_cast<uint32_t>(commitMs - elapsedMs);
+                preDelay = static_cast<std::uint16_t>(commitMs - elapsedMs);
             }
         }
         if (commitPending) {
-            preDelay = std::max<uint32_t>(preDelay, static_cast<uint32_t>(commitMs));
+            preDelay = std::max(preDelay, static_cast<std::uint16_t>(commitMs));
         }
 
-        const std::string frontend     = getFrontendName(&ic_);
-        const bool        echoFrontend = frontend == "dbus" || frontend == "fcitx4" || frontend == "x11" || frontend == "xim";
-        const size_t      delSize      = echoFrontend ? diffPart.deletedPart.size() : graphemeClusterCount(diffPart.deletedPart);
-        const std::string addedUtf8    = lotus::utf8::encode(diffPart.addedPart);
-        const int         burstCount   = static_cast<int>(delSize) + ((currentMode() != LotusMode::SuperSmooth && autofill) ? 1 : 0);
-        const bool        x11Backend   = !vkUsable() && x11Usable();
-        bool              echoDriven   = false;
-        injectionBackend_              = InjectionBackend::None;
+        const std::string  frontend     = getFrontendName(&ic_);
+        const bool         echoFrontend = frontend == "dbus" || frontend == "fcitx4" || frontend == "x11" || frontend == "xim";
+        const std::uint8_t delSize      = clampBackspaceCount(echoFrontend ? diffPart.deletedPart.size() : graphemeClusterCount(diffPart.deletedPart));
+        const std::string  addedUtf8    = lotus::utf8::encode(diffPart.addedPart);
+        const std::uint8_t burstCount   = clampBackspaceCount(static_cast<size_t>(delSize) + ((currentMode() != LotusMode::SuperSmooth && autofill) ? 1 : 0));
+        const bool         x11Backend   = !vkUsable() && x11Usable();
+        bool               echoDriven   = false;
+        injectionBackend_               = InjectionBackend::None;
 
         bool selectMode = uinputSelect;
         if (selectMode && x11Backend && LotusX11Keyboard::shiftHeld()) {
@@ -782,12 +790,12 @@ namespace fcitx {
             }
         }
 
-        const size_t uinputCount = delSize + ((currentMode() != LotusMode::SuperSmooth && autofill) ? 1 : 0);
+        const std::uint8_t uinputCount = burstCount;
 
         currentBackspaceCount_ = 0;
         pendingCommitString_   = diffPart.addedPart;
         // Echo-driven backends: the extra last backspace/Left is the trigger, it is swallowed and commits
-        expectedBackspaces_ = echoDriven ? delSize + ((currentMode() != LotusMode::SuperSmooth && autofill) ? 1 : 0) + 1 : uinputCount;
+        expectedBackspaces_ = clampBackspaceCount(echoDriven ? delSize + ((currentMode() != LotusMode::SuperSmooth && autofill) ? 1 : 0) + 1 : uinputCount);
         realSelect_         = selectMode;
         lastSelect_         = realSelect_;
         g_isDeleting.store(true, std::memory_order_release);
@@ -801,11 +809,11 @@ namespace fcitx {
             echoTriggerPending_ = true;
             if (preDelay > 0) {
                 // The previous commit may still be in flight over dbus: wait before the backspaces.
-                const uint64_t token  = replacementToken_;
-                auto           icRef  = ic_.watch();
-                LotusEngine*   engine = &engine_;
-                const size_t   count  = expectedBackspaces_;
-                const bool     select = selectMode;
+                const uint64_t     token  = replacementToken_;
+                auto               icRef  = ic_.watch();
+                LotusEngine*       engine = &engine_;
+                const std::uint8_t count  = expectedBackspaces_;
+                const bool         select = selectMode;
                 scheduleAfterInjection(static_cast<int>(preDelay), [engine, icRef, token, count, select] {
                     engine->scheduleOnMainThread([engine, icRef, token, count, select] {
                         auto* state = engine->stateFor(icRef.get());
@@ -826,7 +834,7 @@ namespace fcitx {
             LOTUS_WARN("injected burst failed, fallback use uinput");
             echoTriggerPending_ = false;
             injectionBackend_   = InjectionBackend::None;
-            expectedBackspaces_ = uinputCount;
+            expectedBackspaces_ = clampBackspaceCount(uinputCount);
         }
         // Select mode: the uinput server selects with Shift+Left instead. The
         // trigger-key compensation above still applies because the last echoed
@@ -840,7 +848,7 @@ namespace fcitx {
         LOTUS_INFO("Send " + std::to_string(expectedBackspaces_) + " backspaces");
     }
 
-    bool LotusState::injectEchoBurst(size_t count, bool select) {
+    bool LotusState::injectEchoBurst(std::uint8_t count, bool select) {
         switch (injectionBackend_) {
             case InjectionBackend::WlrVirtualKeyboard: {
                 auto& wlr = LotusWlrVirtualKeyboard::instance();
