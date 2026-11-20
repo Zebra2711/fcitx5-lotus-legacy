@@ -39,10 +39,11 @@ void EmojiLoader::loadFromFcitx5(const std::string& language) {
             EmojiEntry entry;
             entry.output  = emoji;
             entry.trigger = key;
-            emojiList.push_back(entry);
+            emojiList.push_back(std::move(entry));
         }
         return true;
     });
+    emojiList.shrink_to_fit();
 }
 
 void EmojiLoader::recordHistory(const EmojiEntry& entry) {
@@ -170,10 +171,9 @@ std::vector<EmojiEntry> EmojiLoader::search(const std::string& prefix) {
         Fuzzy        = 3,
     };
     struct Scored {
-        EmojiEntry entry;
-        Rank       rank{};
-        int        score = 0;
-        size_t     index = 0;
+        Rank   rank{};
+        int    score = 0;
+        size_t index = 0;
     };
     std::vector<Scored> scored;
     // Single linear scan over the DB is retained (M is small); the bound is on
@@ -259,7 +259,7 @@ std::vector<EmojiEntry> EmojiLoader::search(const std::string& prefix) {
         score -= static_cast<int>(trigger.size());
         score -= static_cast<int>(spanLength);
 
-        scored.push_back({.entry = entry, .rank = rank, .score = score, .index = entryIndex});
+        scored.push_back({.rank = rank, .score = score, .index = entryIndex});
     }
 
     const auto topK = [](const auto& a, const auto& b) {
@@ -276,9 +276,9 @@ std::vector<EmojiEntry> EmojiLoader::search(const std::string& prefix) {
     scored.resize(keep);
 
     std::vector<EmojiEntry> finalResults;
-    finalResults.reserve(scored.size());
+    finalResults.reserve(keep);
     for (const auto& result : scored) {
-        finalResults.push_back(result.entry);
+        finalResults.push_back(emojiList[result.index]);
     }
     return finalResults;
 }

@@ -11,10 +11,11 @@
 #ifndef _LOTUS_GENERATED_INPUT_METHOD_DATA_H_
 #define _LOTUS_GENERATED_INPUT_METHOD_DATA_H_
 
+#include "data/flat_map_view.h"
+
 #include <array>
 #include <cstdint>
-#include <string>
-#include <unordered_map>
+#include <string_view>
 
 namespace lotus::data {
     /** @brief Input methods, in the order the addon lists them; Custom has no built-in definition. */
@@ -33,7 +34,7 @@ namespace lotus::data {
     inline constexpr std::size_t kInputMethodCount = 8U;
 
     /** @brief input method -> (key -> dsl line), indexed by InputMethodId; the Custom entry is empty. */
-    extern const std::array<std::unordered_map<std::string, std::string>, kInputMethodCount> kInputMethodDefinitions;
+    extern const std::array<FlatMapView<std::string_view, std::string_view>, kInputMethodCount> kInputMethodDefinitions;
 } // namespace lotus::data
 
 #endif // _LOTUS_GENERATED_INPUT_METHOD_DATA_H_

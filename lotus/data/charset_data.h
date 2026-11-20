@@ -11,10 +11,11 @@
 #ifndef _LOTUS_GENERATED_CHARSET_DATA_H_
 #define _LOTUS_GENERATED_CHARSET_DATA_H_
 
+#include "data/flat_map_view.h"
+
 #include <array>
 #include <cstdint>
 #include <string_view>
-#include <unordered_map>
 
 namespace lotus::data {
     /** @brief Output charsets, in the order the addon lists them (Unicode first, then name order). */
@@ -42,7 +43,7 @@ namespace lotus::data {
     inline constexpr std::size_t kCharsetCount = 17U;
 
     /** @brief charset -> (code point -> encoded bytes), indexed by Charset; the Unicode entry is empty. */
-    extern const std::array<std::unordered_map<char32_t, std::string_view>, kCharsetCount> kCharsetTables;
+    extern const std::array<FlatMapView<char32_t, std::string_view>, kCharsetCount> kCharsetTables;
 } // namespace lotus::data
 
 #endif // _LOTUS_GENERATED_CHARSET_DATA_H_

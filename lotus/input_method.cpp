@@ -18,19 +18,27 @@
 #include <array>
 #include <cstddef>
 #include <string>
-#include <unordered_map>
+#include <string_view>
 #include <utility>
 #include <vector>
 
 namespace lotus {
 
-    InputMethod parseInputMethod(const std::unordered_map<std::string, std::string>& definition) {
+    InputMethod parseInputMethod(data::FlatMapView<std::string_view, std::string_view> definition) {
         InputMethod method;
 
         // Go iterates a map here, so the order of the definition keys is random; only the
         // key -> rules association matters, and the keys/toneKeys/appendingKeys lists are used
-        // for membership tests. Sort the keys to keep the result deterministic.
-        std::vector<std::pair<std::string, std::string>> entries(definition.begin(), definition.end());
+        // for membership tests. Keep the first entry per key (the map behavior) and sort the
+        // keys to keep the result deterministic.
+        std::vector<std::pair<std::string_view, std::string_view>> entries;
+        entries.reserve(definition.size());
+        for (const auto& [key, value] : definition) {
+            const bool seen = std::ranges::any_of(entries, [&](const auto& entry) { return entry.first == key; });
+            if (!seen) {
+                entries.emplace_back(key, value);
+            }
+        }
         std::ranges::sort(entries);
 
         for (const auto& entry : entries) {
