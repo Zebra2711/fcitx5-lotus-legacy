@@ -191,6 +191,38 @@ if(XVFB_RUN)
     add_test(NAME x11_keyboard_inject_xvfb COMMAND ${XVFB_RUN} -a $<TARGET_FILE:x11_keyboard_inject>)
     set_tests_properties(x11_keyboard_inject_xvfb PROPERTIES LABELS "integration;x11" TIMEOUT 60 ENVIRONMENT "LOTUS_X11_KEYBOARD_TEST=1")
 endif()
+
+# The wlroots virtual keyboard is tested against a throwaway in-process
+# compositor, so it needs the server half of the virtual-keyboard protocol.
+pkg_check_modules(WAYLAND_SERVER IMPORTED_TARGET wayland-server)
+if(WAYLAND_SERVER_FOUND)
+    set(LOTUS_VK_SERVER_HEADER "${CMAKE_CURRENT_BINARY_DIR}/virtual-keyboard-unstable-v1-server-protocol.h")
+    set(LOTUS_VK_SERVER_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/virtual-keyboard-unstable-v1-server-protocol.c")
+    add_custom_command(
+        OUTPUT "${LOTUS_VK_SERVER_HEADER}"
+        COMMAND "${WAYLAND_SCANNER}" server-header "${LOTUS_VK_XML}" "${LOTUS_VK_SERVER_HEADER}"
+        DEPENDS "${LOTUS_VK_XML}"
+        VERBATIM
+    )
+    # public-code, not private-code: the core module hides its copy of the
+    # interface structs, and this test needs its own visible definitions.
+    add_custom_command(
+        OUTPUT "${LOTUS_VK_SERVER_SOURCE}"
+        COMMAND "${WAYLAND_SCANNER}" public-code "${LOTUS_VK_XML}" "${LOTUS_VK_SERVER_SOURCE}"
+        DEPENDS "${LOTUS_VK_XML}"
+        VERBATIM
+    )
+    add_lotus_headless_test(
+        TARGET wlr_virtual_keyboard_shift
+        SOURCES wlr-virtual-keyboard-shift.cpp
+        LABELS "integration;keyboard"
+        LINK_LIBRARIES PkgConfig::WAYLAND_SERVER
+    )
+    target_sources(wlr_virtual_keyboard_shift PRIVATE "${LOTUS_VK_SERVER_HEADER}" "${LOTUS_VK_SERVER_SOURCE}")
+    set_source_files_properties("${LOTUS_VK_SERVER_SOURCE}" PROPERTIES LANGUAGE C SKIP_PRECOMPILE_HEADERS ON)
+    target_include_directories(wlr_virtual_keyboard_shift PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+endif()
+
 add_lotus_headless_test(TARGET window_focus_tracker SOURCES window-focus-tracker.cpp LABELS "integration;apprule;dbus")
 target_compile_definitions(window_focus_tracker PRIVATE LOTUS_TEST_DBUS_CONFIG="${CMAKE_CURRENT_SOURCE_DIR}/dbus-session.conf")
 set_tests_properties(kb_sender PROPERTIES

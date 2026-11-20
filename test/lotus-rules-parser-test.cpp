@@ -99,16 +99,16 @@ int run_rules_parser() {
     {
         const auto lower = parseTonelessRules(U'[', U"__ươ");
         check("__ươ rule count", lower.size() == 1U);
-        check("__ươ appended count", !lower.empty() && lower[0].appendedRules.size() == 1U);
-        if (!lower.empty() && lower[0].appendedRules.size() == 1U) {
-            checkAppendRule("__ươ appended rule", lower[0].appendedRules[0], U'[', U'ơ');
+        check("__ươ appended count", !lower.empty() && lower[0].appendedRules().size() == 1U);
+        if (!lower.empty() && lower[0].appendedRules().size() == 1U) {
+            checkAppendRule("__ươ appended rule", lower[0].appendedRules()[0], U'[', U'ơ');
         }
 
         const auto upper = parseTonelessRules(U'{', U"__ƯƠ");
         check("__ƯƠ rule count", upper.size() == 1U);
-        check("__ƯƠ appended count", !upper.empty() && upper[0].appendedRules.size() == 1U);
-        if (!upper.empty() && upper[0].appendedRules.size() == 1U) {
-            checkAppendRule("__ƯƠ appended rule", upper[0].appendedRules[0], U'{', U'Ơ');
+        check("__ƯƠ appended count", !upper.empty() && upper[0].appendedRules().size() == 1U);
+        if (!upper.empty() && upper[0].appendedRules().size() == 1U) {
+            checkAppendRule("__ƯƠ appended rule", upper[0].appendedRules()[0], U'{', U'Ơ');
         }
     }
 
@@ -160,7 +160,7 @@ int run_rules_parser() {
             first.rules.size() == parsed.rules.size();
         for (std::size_t i = 0; same && i < parsed.rules.size(); ++i) {
             same = first.rules[i].key == parsed.rules[i].key && first.rules[i].effectType == parsed.rules[i].effectType && first.rules[i].effectOn == parsed.rules[i].effectOn &&
-                first.rules[i].result == parsed.rules[i].result && first.rules[i].appendedRules.size() == parsed.rules[i].appendedRules.size();
+                first.rules[i].result == parsed.rules[i].result && first.rules[i].appendedRules().size() == parsed.rules[i].appendedRules().size();
         }
         check("cachedInputMethod matches parseInputMethod", same);
 

@@ -300,10 +300,11 @@ namespace lotus {
 
     Composition generateFallbackTransformations(const std::vector<Rule>& applicableRules, char32_t lowerKey, bool isUpperCase) {
         Composition             transformations;
-        const TransformationPtr trans = generateAppendingTrans(applicableRules, lowerKey, isUpperCase);
-        transformations.reserve(trans->rule.appendedRules.size() + 1U);
+        const TransformationPtr trans    = generateAppendingTrans(applicableRules, lowerKey, isUpperCase);
+        const auto              appended = trans->rule.appendedRules();
+        transformations.reserve(appended.size() + 1U);
         transformations.push_back(trans);
-        for (const auto& appendedRule : trans->rule.appendedRules) {
+        for (const auto& appendedRule : appended) {
             Rule       rule                = appendedRule;
             const bool isAppendedUpperCase = isUpperCase || case_map::isUpper(rule.effectOn);
             rule.key                       = 0;

@@ -272,7 +272,7 @@ int run_engine_utils() {
         appended.effectType = EffectType::Appending;
         appended.effectOn   = U'ơ';
         appended.result     = U'ơ';
-        appending.appendedRules.push_back(appended);
+        appending.appendRule(appended);
         const Composition withAppended = lotus::generateFallbackTransformations({appending}, U'w', false);
         check("fallback appended size", withAppended.size() == 2U);
         check("fallback appended virtual key", withAppended.size() == 2U && withAppended[1]->rule.key == 0 && withAppended[1]->rule.effectOn == U'ơ');

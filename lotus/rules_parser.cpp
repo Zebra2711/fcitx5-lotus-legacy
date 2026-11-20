@@ -204,7 +204,7 @@ namespace lotus {
             appended.effectType = EffectType::Appending;
             appended.effectOn   = chars[i];
             appended.result     = chars[i];
-            rule.appendedRules.push_back(appended);
+            rule.appendRule(appended);
         }
         return rule;
     }
