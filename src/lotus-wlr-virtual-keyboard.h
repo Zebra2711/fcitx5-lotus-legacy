@@ -25,6 +25,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 struct wl_display;
 struct wl_keyboard;
@@ -119,6 +120,10 @@ namespace fcitx {
      * only while Unicode keys are being injected, then the compositor keymap is restored. A different keymap can be
      * pushed to the focused client, recreating its xkb state and silently dropping held modifiers (Shift, NumLock).
      *
+     * A whole burst is queued in one batch (load keymap, inject keys, restore keymap) and drained with a single
+     * roundtrip. Keymap bytes live in reusable memfds; the compositor keymap is only written once and an unload
+     * just re-sends its fd.
+     *
      * available() only looks for the manager global; the virtual keyboard device itself is created on the first
      * emit, so simply probing the compositor has no visible side effect.
      */
@@ -179,11 +184,14 @@ namespace fcitx {
         bool                                      uploadKeymap(const uint32_t* cps, size_t n);
         bool                                      uploadKeymapBytes(std::string_view keymap);
         bool                                      restoreCompositorKeymap();
+        bool                                      writeKeymapToFd(int fd, std::string_view keymap);
+        int                                       keymapFdForUpload();
+        void                                      closeKeymapFds();
         void                                      watchCompositorKeymap();
         void                                      storeCompositorKeymap(uint32_t format, int fd, uint32_t size);
         static void                               compositorKeymap(void* data, wl_keyboard* keyboard, uint32_t format, int32_t fd, uint32_t size);
         void                                      tap(uint32_t evdevKey, bool track);
-        void                                      setShift(bool down);
+        void                                      setShift(bool down, bool flush = true);
         bool                                      emitImpl(int count, std::string_view utf8, bool trackEcho, bool anchorDot);
         void                                      disconnect();
 
@@ -194,13 +202,17 @@ namespace fcitx {
         ZwpVirtualKeyboardManagerPtr              manager_;          ///< Manager global of the compositor
         ZwpVirtualKeyboardPtr                     keyboard_;         ///< Virtual keyboard device, created on the first emit
         std::string                               compositorKeymap_; ///< Exact XKB_V1 keymap the compositor uses for the seat
-        uint32_t                                  time_               = 1;
-        std::atomic<bool>                         injecting_          = false;
-        bool                                      probed_             = false;
-        bool                                      keymapSet_          = false;
-        bool                                      keymapIsCompositor_ = false;
-        bool                                      supported_          = false;
-        std::atomic<bool>                         userShift_          = false;
+        std::vector<int>                          keymapFds_;        ///< Reusable memfds, one per in-flight custom upload
+        size_t                                    keymapFdSlot_           = 0;
+        int                                       compositorKeymapFd_     = -1;    ///< Memfd holding the cached compositor keymap
+        bool                                      compositorKeymapCached_ = false; ///< Whole compositorKeymap_ already written to the fd
+        uint32_t                                  time_                   = 1;
+        std::atomic<bool>                         injecting_              = false;
+        bool                                      probed_                 = false;
+        bool                                      keymapSet_              = false;
+        bool                                      keymapIsCompositor_     = false;
+        bool                                      supported_              = false;
+        std::atomic<bool>                         userShift_              = false;
         std::deque<std::pair<uint32_t, uint32_t>> echo_;
         std::mutex                                deviceMutex_; ///< Serialises the Wayland device between the main and worker threads
 
