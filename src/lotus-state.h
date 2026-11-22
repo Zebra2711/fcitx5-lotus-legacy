@@ -21,6 +21,7 @@
 #include "common-protocol.h"
 #include "lotus-utils.h"
 
+#include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -176,6 +177,11 @@ namespace fcitx {
         int64_t                               replacementDeadlineMs_ = 0; ///< ms by which every injected backspace must be echoed (0 = no replacement in flight)
         int64_t                               replacementEchoGrace_  = 0; ///< deadline grace re-armed on each echo
         uint64_t                              replacementToken_      = 0; ///< invalidates a queued virtual-keyboard completion
+
+        bool                                  injectedEchoWait_       = false; ///< Injected burst keys must echo before more keys are forwarded
+        int64_t                               injectedEchoDeadlineMs_ = 0;     ///< Fallback deadline when an echo is lost
+        std::atomic<bool>                     injectedEchoEmitted_{true};      ///< The (possibly delayed) emit has returned
+        std::unique_ptr<EventSourceTime>      injectedEchoTimer_;              ///< Event-loop check for the injected burst
         std::chrono::steady_clock::time_point lastCommitTime_;
 
         /**
@@ -496,6 +502,40 @@ namespace fcitx {
          * replacement completes.
          */
         void replayBufferedKeys();
+
+        /**
+         * @brief Buffers text keys until an injected burst has echoed back.
+         *
+         * A replacement through zwp_virtual_keyboard_v1 is sent on the addon's
+         * own connection, while forwarded keys leave through the fcitx
+         * connection. The compositor may interleave the two, so a key typed
+         * right after the burst must wait until every injected key has been
+         * echoed back and is known to be processed.
+         *
+         * @param preDelay Delay before the burst is emitted, in milliseconds.
+         */
+        void beginInjectedEchoWait(int preDelay);
+
+        /**
+         * @brief Ends the echo wait and replays the keys buffered meanwhile.
+         */
+        void finishInjectedEchoWait();
+
+        /**
+         * @brief Drops the echo wait without replaying the buffered keys.
+         */
+        void cancelInjectedEchoWait();
+
+        /**
+         * @brief Runs on the event loop: finishes the wait once the echoes drained.
+         */
+        void checkInjectedEchoWait();
+
+        /**
+         * @brief Arms the event-loop check for the injected burst.
+         * @param delayMs Delay in milliseconds.
+         */
+        void scheduleInjectedEchoCheck(int delayMs);
 
         /**
          * @brief Checks if the key symbol matches the configured macro-skip modifier.

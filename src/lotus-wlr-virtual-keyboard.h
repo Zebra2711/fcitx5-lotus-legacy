@@ -138,6 +138,12 @@ namespace fcitx {
         bool consumeEcho(uint32_t code, uint32_t time);
 
         /**
+         * @brief Number of injected keys the compositor has not echoed back yet.
+         * @return Count of tracked presses still waiting for their echo event.
+         */
+        [[nodiscard]] size_t pendingEchoes();
+
+        /**
          * @brief Keeps the virtual keyboard's Shift in sync with the physical Shift key.
          *
          * Applies the state immediately and re-applies it after each keymap upload,

@@ -152,6 +152,7 @@ namespace fcitx {
 
     void LotusState::discardForAppChange() {
         cancelPendingUinput();
+        cancelInjectedEchoWait();
         g_isDeleting.store(false, std::memory_order_release);
         deferredCommitTimer_.reset();
         deferredCommitPending_ = false;
@@ -589,14 +590,39 @@ namespace fcitx {
                 LOTUS_INFO("dbg: del=" + std::to_string(delSize) + " burst=" + std::to_string(burstCount) + " preDelay=" + std::to_string(preDelay) + " add=[" + addedUtf8 + "] mode=" + std::to_string(static_cast<int>(currentMode())));
                 const std::string wlrLog  = "wlr-virtual-keyboard: sent " + std::to_string(burstCount) + " backspaces + keys for [" + addedUtf8 + "]";
                 if (preDelay > 0) {
-                    wlr.runAfter(static_cast<int>(preDelay), emitNow);
+                    // Keys typed while the burst is queued or in flight must not
+                    // overtake it: they leave through the fcitx connection while
+                    // the burst uses the virtual keyboard connection, and the
+                    // compositor may interleave the two.
+                    beginInjectedEchoWait(preDelay);
+                    auto         icRef  = ic_.watch();
+                    LotusEngine* engine = &engine_;
+                    // emitNow already captures the singleton by reference.
+                    wlr.runAfter(static_cast<int>(preDelay), [emitNow, engine, icRef] {
+                        const bool ok = emitNow();
+                        engine->scheduleOnMainThread([engine, icRef, ok] {
+                            auto* state = engine->stateFor(icRef.get());
+                            if (state == nullptr) {
+                                return;
+                            }
+                            state->injectedEchoEmitted_.store(true, std::memory_order_release);
+                            if (ok) {
+                                state->scheduleInjectedEchoCheck(0);
+                            } else {
+                                state->finishInjectedEchoWait();
+                            }
+                        });
+                    });
                     LOTUS_INFO(wlrLog);
                     return;
                 }
+                beginInjectedEchoWait(0);
                 if (emitNow()) {
                     LOTUS_INFO(wlrLog);
+                    scheduleInjectedEchoCheck(0);
                     return;
                 }
+                finishInjectedEchoWait();
                 LOTUS_WARN("wlr-virtual-keyboard emit failed");
             } else {
                 injectionBackend_ = InjectionBackend::WlrVirtualKeyboard;
@@ -1123,13 +1149,25 @@ namespace fcitx {
         // back through the XIM/dbus frontend like uinput keys and are counted by handleUInputKeyPress.
         if (injectionBackend_ != InjectionBackend::X11Test) {
             auto& vk = LotusWlrVirtualKeyboard::instance();
-            if (vk.injecting()) {
-                LOTUS_INFO("dbg: key swallowed while injecting, code=" + std::to_string(keyEvent.rawKey().code()));
-                keyEvent.filterAndAccept();
-                return true;
-            }
+            // Match echoes before the injecting guard: a burst emitted from the
+            // worker keeps injecting() true for a roundtrip, and echoes that
+            // arrive inside that window must still be consumed and forwarded.
             if (vk.consumeEcho(static_cast<uint32_t>(keyEvent.rawKey().code()), static_cast<uint32_t>(keyEvent.time()))) {
                 keyEvent.forward();
+                if (injectedEchoWait_ && vk.pendingEchoes() == 0) {
+                    // The client must receive this last echo before the buffered
+                    // keys replay, so finish on the next event-loop turn.
+                    scheduleInjectedEchoCheck(0);
+                }
+                return true;
+            }
+            // During an echo-driven replacement the injected backspaces come back
+            // through the frontend and are counted by handleUInputKeyPress, not
+            // matched as wlr echoes. Swallowing them here would lose the trigger
+            // backspace and stall the replacement until its ack deadline.
+            if (vk.injecting() && !g_isDeleting.load(std::memory_order_acquire)) {
+                LOTUS_INFO("dbg: key swallowed while injecting, code=" + std::to_string(keyEvent.rawKey().code()));
+                keyEvent.filterAndAccept();
                 return true;
             }
         }
@@ -1160,6 +1198,19 @@ namespace fcitx {
             const KeySym    bufferedSym   = keyEvent.rawKey().sym();
             const KeyStates bufferedState = keyEvent.rawKey().states();
             if (!Key::keySymToUTF8(bufferedSym).empty()) {
+                bufferedKeys_.push({.sym = bufferedSym, .state = bufferedState});
+                keyEvent.filterAndAccept();
+                return;
+            }
+        }
+        if (injectedEchoWait_) {
+            // The virtual keyboard burst is still being applied by the
+            // compositor. Forwarding this key now would race the burst on the
+            // other connection, so replay it once every injected key echoed.
+            const KeySym    bufferedSym   = keyEvent.rawKey().sym();
+            const KeyStates bufferedState = keyEvent.rawKey().states();
+            if (!Key::keySymToUTF8(bufferedSym).empty()) {
+                LOTUS_INFO("Typing before the injected burst echoed, add key to queue");
                 bufferedKeys_.push({.sym = bufferedSym, .state = bufferedState});
                 keyEvent.filterAndAccept();
                 return;
@@ -1445,6 +1496,7 @@ namespace fcitx {
 
     void LotusState::resetNow(bool isFocusOut) {
         cancelMouseClickWatchdog();
+        cancelInjectedEchoWait();
         if (g_isDeleting.load(std::memory_order_acquire)) {
             return;
         }
@@ -1537,6 +1589,7 @@ namespace fcitx {
 
     void LotusState::clearAllBuffers(bool keepSentenceState) {
         cancelMouseClickWatchdog();
+        cancelInjectedEchoWait();
         deliverPendingCommits();
         LOTUS_DEBUG("Clear all buffers");
         if (g_isDeleting.load(std::memory_order_acquire)) {
@@ -1612,6 +1665,76 @@ namespace fcitx {
             deferredCommitPending_ = false;
         }
         flushCommitBatch();
+    }
+
+    void LotusState::beginInjectedEchoWait(int preDelay) {
+        injectedEchoWait_ = true;
+        // The direct path emits before the main loop can see another key, so only
+        // a delayed emit has to clear this from the worker callback.
+        injectedEchoEmitted_.store(preDelay <= 0, std::memory_order_release);
+        const int waitMs        = std::max(preDelay, 0) + static_cast<int>(kReplacementAckSlackMs);
+        injectedEchoDeadlineMs_ = nowMs() + waitMs;
+        scheduleInjectedEchoCheck(waitMs);
+    }
+
+    void LotusState::finishInjectedEchoWait() {
+        if (!injectedEchoWait_) {
+            return;
+        }
+        injectedEchoWait_ = false;
+        injectedEchoEmitted_.store(true, std::memory_order_release);
+        injectedEchoDeadlineMs_ = 0;
+        injectedEchoTimer_.reset();
+        if (!bufferedKeys_.empty()) {
+            deferCommits_ = getFrontendName(&ic_) == "dbus";
+            replayBufferedKeys();
+            flushCommitBatch();
+        }
+    }
+
+    void LotusState::cancelInjectedEchoWait() {
+        injectedEchoWait_ = false;
+        injectedEchoEmitted_.store(true, std::memory_order_release);
+        injectedEchoDeadlineMs_ = 0;
+        injectedEchoTimer_.reset();
+    }
+
+    void LotusState::checkInjectedEchoWait() {
+        if (!injectedEchoWait_) {
+            return;
+        }
+        const bool emitted  = injectedEchoEmitted_.load(std::memory_order_acquire);
+        const auto pending  = LotusWlrVirtualKeyboard::instance().pendingEchoes();
+        const auto nowValue = nowMs();
+        const bool expired  = injectedEchoDeadlineMs_ != 0 && nowValue >= injectedEchoDeadlineMs_;
+        if (!emitted && !expired) {
+            scheduleInjectedEchoCheck(static_cast<int>(std::max<int64_t>(injectedEchoDeadlineMs_ - nowValue, 1)));
+            return;
+        }
+        if (!emitted) {
+            // The worker callback was lost; do not hold the buffered keys forever.
+            injectedEchoEmitted_.store(true, std::memory_order_release);
+        }
+        if (pending == 0) {
+            finishInjectedEchoWait();
+            return;
+        }
+        if (expired) {
+            LOTUS_WARN("Injected burst echo timed out, replaying buffered keys");
+            finishInjectedEchoWait();
+            return;
+        }
+        scheduleInjectedEchoCheck(static_cast<int>(std::max<int64_t>(injectedEchoDeadlineMs_ - nowValue, 1)));
+    }
+
+    void LotusState::scheduleInjectedEchoCheck(int delayMs) {
+        injectedEchoTimer_.reset();
+        const uint64_t delayUs = static_cast<uint64_t>(std::max(delayMs, 0)) * 1000ULL;
+        injectedEchoTimer_     = engine_.instance()->eventLoop().addTimeEvent(CLOCK_MONOTONIC, now(CLOCK_MONOTONIC) + delayUs, 0, [this](EventSourceTime*, uint64_t) {
+            [[maybe_unused]] auto* released = injectedEchoTimer_.release();
+            checkInjectedEchoWait();
+            return false;
+        });
     }
 
     void LotusState::replayBufferedKeys() {

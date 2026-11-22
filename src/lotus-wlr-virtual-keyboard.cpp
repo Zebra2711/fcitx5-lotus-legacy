@@ -514,6 +514,11 @@ namespace fcitx {
         return false;
     }
 
+    size_t LotusWlrVirtualKeyboard::pendingEchoes() {
+        std::scoped_lock lock(deviceMutex_);
+        return echo_.size();
+    }
+
     bool LotusWlrVirtualKeyboard::emit(int backspaces, std::string_view utf8, bool trackEcho, bool anchorDot) {
         return emitImpl(backspaces, utf8, trackEcho, anchorDot);
     }
