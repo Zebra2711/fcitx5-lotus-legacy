@@ -468,11 +468,16 @@ namespace fcitx {
             return;
         }
         const std::string_view keymap(data.data(), len);
+        // Keymaps from other virtual keyboards (wtype, ydotool) have no standard letter keys.
+        if (keymap.find("<AC01>") == std::string_view::npos) {
+            return;
+        }
         if (keymap == compositorKeymap_) {
             return;
         }
         compositorKeymap_.assign(keymap);
         compositorKeymapCached_ = false;
+        keymapIsCompositor_     = false;
     }
 
     void LotusWlrVirtualKeyboard::compositorKeymap(void* data, wl_keyboard* /*keyboard*/, uint32_t format, int32_t fd, uint32_t size) {
