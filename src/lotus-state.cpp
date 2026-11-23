@@ -588,7 +588,7 @@ namespace fcitx {
                 auto&             wlr     = LotusWlrVirtualKeyboard::instance();
                 auto              emitNow = [&wlr, burstCount, addedUtf8, dotAnchor] { return wlr.emit(burstCount, addedUtf8, true, dotAnchor); };
                 LOTUS_INFO("dbg: del=" + std::to_string(delSize) + " burst=" + std::to_string(burstCount) + " preDelay=" + std::to_string(preDelay) + " add=[" + addedUtf8 + "] mode=" + std::to_string(static_cast<int>(currentMode())));
-                const std::string wlrLog  = "wlr-virtual-keyboard: sent " + std::to_string(burstCount) + " backspaces + keys for [" + addedUtf8 + "]";
+                const std::string wlrLog  = "wlr-virtual-keyboard: sent " + std::to_string(burstCount) + " backspaces + keys for [" + addedUtf8 + "]" + (dotAnchor ? " (dot anchor)" : "");
                 if (preDelay > 0) {
                     // Keys typed while the burst is queued or in flight must not
                     // overtake it: they leave through the fcitx connection while
@@ -632,7 +632,7 @@ namespace fcitx {
             if (!echoDriven) {
                 auto&             x11     = LotusX11Keyboard::instance();
                 auto              emitNow = [&x11, burstCount, addedUtf8, interval, dotAnchor] { return x11.emit(burstCount, addedUtf8, static_cast<int>(interval), dotAnchor); };
-                const std::string x11Log  = "x11-keyboard: sent " + std::to_string(burstCount) + " backspaces + keys for [" + addedUtf8 + "]";
+                const std::string x11Log  = "x11-keyboard: sent " + std::to_string(burstCount) + " backspaces + keys for [" + addedUtf8 + "]" + (dotAnchor ? " (dot anchor)" : "");
                 if (preDelay > 0) {
                     x11.runAfter(static_cast<int>(preDelay), emitNow);
                     LOTUS_INFO(x11Log);
@@ -649,6 +649,7 @@ namespace fcitx {
         }
 
         if (dotAnchor) {
+            LOTUS_INFO("Smooth dot anchor: commit '" + lotus::utf8::encode(kDotAnchorText) + "', delete " + std::to_string(deleteCount) + " backspaces");
             preDelay = std::max<uint32_t>(preDelay, static_cast<uint32_t>(commitMs));
             lotus::fcitx_text::commit(&ic_, kDotAnchorText, lastCommitTime_);
         }
