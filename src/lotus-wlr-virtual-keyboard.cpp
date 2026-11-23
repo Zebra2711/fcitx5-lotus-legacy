@@ -544,6 +544,11 @@ namespace fcitx {
         if (count == 0 && cps.empty()) {
             return true;
         }
+        bool anchored = false;
+        if (anchorDot && !cps.empty() && cps.size() < kTextKeys.size()) {
+            cps.insert(cps.begin(), kDotAnchorCodePoint);
+            anchored = true;
+        }
         std::scoped_lock lock(deviceMutex_);
         if (!ensureDevice()) {
             return false;
@@ -554,7 +559,7 @@ namespace fcitx {
             echo_.clear();
         }
         bool ok = true;
-        if (anchorDot) {
+        if (anchorDot && !anchored) {
             LOTUS_INFO("wlr-virtual-keyboard: emit dot anchor before replacement");
             const std::array<uint32_t, 1> anchor{kDotAnchorCodePoint};
             ok = uploadKeymap(anchor.data(), anchor.size());
@@ -589,10 +594,14 @@ namespace fcitx {
                     break;
                 }
                 if (first) {
+                    if (anchored) {
+                        tap(kTextKeys[0], trackEcho);
+                        wl_display_roundtrip(display_.get());
+                    }
                     moveKeys();
                     first = false;
                 }
-                for (size_t i = 0; i < n; ++i) {
+                for (size_t i = (anchored && pos == 0) ? 1 : 0; i < n; ++i) {
                     tap(kTextKeys[i], trackEcho); // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
                 }
                 pos += n;
