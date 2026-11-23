@@ -50,7 +50,7 @@ namespace {
         std::string actual = "commits=";
         for (const auto& commit : context.commits())
             actual += "['" + commit + "']";
-        reportFailure(step, "commits=['á']", actual, "the composed word from the previous field must not leak");
+        reportFailure(step, "commits=['·']['á']", actual, "the composed word from the previous field must not leak");
         return false;
     }
 
@@ -106,9 +106,11 @@ int main() {
     KbMsg msg{};
     if (!listener.receive(msg, "the replacement for the fresh word did not arrive"))
         return 1;
-    if (msg.op != KbOp::Backspace || msg.count != 1) {
-        reportFailure("replacement after a field change", "op=backspace, count=1", "op=" + std::to_string(static_cast<int>(msg.op)) + ", count=" + std::to_string(msg.count),
-                      "only the fresh 'a' may be replaced; a larger count means the previous field's word leaked");
+    // Smooth mode deletes the fresh 'a' plus the dot anchor; a larger count
+    // would mean the previous field's word leaked into this one.
+    if (msg.op != KbOp::Backspace || msg.count != 2) {
+        reportFailure("replacement after a field change", "op=backspace, count=2", "op=" + std::to_string(static_cast<int>(msg.op)) + ", count=" + std::to_string(msg.count),
+                      "only the fresh 'a' and the dot anchor may be replaced; a larger count means the previous field's word leaked");
         return 1;
     }
     for (std::size_t i = 0; i < static_cast<std::size_t>(msg.count); ++i) {
@@ -119,7 +121,7 @@ int main() {
         return 1;
 
     pumpEventLoop(testInstance);
-    if (!checkCommits(*context, {"á"}, "commit in the new field"))
+    if (!checkCommits(*context, {"·", "á"}, "commit in the new field"))
         return 1;
 
     std::printf("lotus focus field change word reset: all checks passed\n");
